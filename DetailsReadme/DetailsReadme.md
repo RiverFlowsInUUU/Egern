@@ -59,13 +59,15 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 | 类型 | 作用 | 模板里的例子 |
 |---|---|---|
 | `select` | 手动选路 | `Proxy` / `Final` / 各类 App 组 |
-| `smart` | 按节点名 / 地区正则自动归类 | `Hong Kong` / `USA` / `Japan` |
-| `fallback` | 按延迟自动回退 | 延迟优选组 |
+| `smart` | 智能选优：组内多轮测速，按延迟 / 抖动 / 可靠性综合打分自动选最稳节点 | `Hong Kong` / `USA` / `Japan`（这些地区组另配 `filter` 正则从订阅里筛节点 —— 归类是 `filter` 的职责，不是 `smart` 的） |
+| `fallback` | 故障转移：按 `policies` 顺序依次尝试，选第一个可用的节点 | `ChatGPT` / `Gemini` |
 | `external` | 从订阅 URL 拉取节点 | 模板里是 `sub.example.com?token=REPLACE_WITH_YOUR_TOKEN` 占位 |
 
 要点：
 - **组与组之间可以互相引用**（例如 `Final` 的成员是 `Proxy`，App 组的成员里混入地区组）。这种引用关系保留，是模板的正常结构。
 - **暂时没有成员的组留 `[]`**（如 `ChatGPT` / `Gemini`），等你补节点或订阅组。
+  ⚠️ 注意这两组是 `fallback`（故障转移）：填多个节点时**永远用第 1 个**，不做延迟择优；
+  且规则 3/4 直接指向它们，**填好之前 OpenAI / Gemini 流量是断的**（详见 `docs/04-模板逐段讲解.md` §4）。
 - **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
 
 ### 1.4 `rules` —— 匹配表与直连规则集

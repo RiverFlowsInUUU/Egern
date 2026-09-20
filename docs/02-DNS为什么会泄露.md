@@ -64,7 +64,8 @@ upstreams:
 python -c "import yaml;d=yaml.safe_load(open('Profile.yaml',encoding='utf-8'));print([(p[list(p)[0]].get('name'),p[list(p)[0]].get('server')) for p in d['proxies']])"
 ```
 
-只要 `server` 里有域名，就要在 `forward` 里找对应的显式规则。
+只要 `server` 里有域名，就要确认**代理 DNS 那条路最终落在哪个解析器上** ——
+注意它**不查 `forward`**（官方语义见下方警告），所以"去 `forward` 里找规则"是错的查法。
 
 **修法**（两个方向，按推荐顺序）：
 
@@ -75,13 +76,25 @@ proxies:
     name: 🇺🇸 Node-1
     server: 203.0.113.10        # IP 形式，零解析
 
-# 方向 B（收口）：在 forward 里为节点域名显式指定国内加密组
+# 方向 B（收口）：让代理 DNS 落在一个国内加密组上 —— B-1 / B-2 二选一，不要叠加
+#   B-1（本模板采用）：显式写 proxy_nameservers ⇒ 强制直连该列表、跳过 forward
+dns:
+  proxy_nameservers:
+  - https://223.5.5.5/dns-query
+  - https://223.6.6.6/dns-query
+  # …共 6 个 IP 字面量端点
+
+#   B-2：不写 proxy_nameservers，改为让 forward 的兜底接住节点域名
 dns:
   forward:
-  - domain_suffix:
-      match: example-node.com   # ← 你的节点域名后缀
-      value: Domestic-DNS
+  - domain_regex: {match: '.', value: Domestic-DNS}
 ```
+
+> ⚠️ **不要再写"在 `forward` 里为节点域名加一条 `domain_suffix`"** —— 这个做法自 v7 起就是**死代码**。
+> 官方语义：**一旦配置了 `proxy_nameservers`，代理 DNS 会跳过 `forward` 阶段**；而节点域名走的正是代理 DNS
+> ⇒ 那条规则**永远不会被查询到**，写了等于没写。v10 又把 `forward` 塌缩成纯兜底，即使不写
+> `proxy_nameservers`，节点域名也已命中兜底 ⇒ 同样不需要为它单独写规则。
+> （模板 `dns` 段注释里也记了这条：「原第 3~5 条（机场节点域名）自 v7 写出 `proxy_nameservers` 起就是死代码」。）
 
 > **方向 B 的价值在于"把这次注定要发生的国内解析，变成确定的、快的、不经明文的"。**
 > 它并不隐藏"你在解析节点域名"这件事 —— 真要连节点域名都不暴露，只有方向 A。
