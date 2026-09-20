@@ -149,4 +149,4 @@ A：DNS 行为与运营商策略强相关；审计验证的是"配置本身没�
 
 ## 许可
 
-文档与配置模板可自由使用与修改。引用的第三方规则集版权归其原作者（[blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)、[ACL4SSR](https://github.com/ACL4SSR/ACL4SSR)、[TG-Twilight/AWAvenue-Ads-Rule](https://github.com/TG-Twilight/AWAvenue-Ads-Rule)、[Koolson/Qure](https://github.com/Koolson/Qure) 等）。
+本项目以 **MIT 许可证**发布，详见仓库根目录的 [LICENSE](LICENSE) 文件。文档与配置模板可自由使用、修改与再分发。引用的第三方规则集版权归其原作者（[blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)、[ACL4SSR](https://github.com/ACL4SSR/ACL4SSR)、[TG-Twilight/AWAvenue-Ads-Rule](https://github.com/TG-Twilight/AWAvenue-Ads-Rule)、[Koolson/Qure](https://github.com/Koolson/Qure) 等），使用前请自行确认其许可条款。
