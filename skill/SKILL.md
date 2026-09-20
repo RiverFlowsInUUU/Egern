@@ -641,7 +641,9 @@ v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随�
 
 ```
 README.md                                   # 三条铁律 + 一图看懂回退链
-profiles/egern-anti-dns-leak.template.yaml  # 脱敏模板（无节点、无订阅、无证书）
+profiles/v2.yaml                           # 脱敏模板 · 推荐版（无节点、无订阅、无证书）
+profiles/v2.min.yaml                        # 同上，纯配置版（去注释）
+profiles/v1.yaml / v1.min.yaml              # 旧版，保留不删（dns 段较冗长，功能等价）
 docs/01-DNS是怎么工作的.md                   # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
 docs/02-DNS为什么会泄露.md                   # 5 个真实案例（每个：现象→机制→修法）
 docs/03-加固清单-18项.md                     # 清单 + no_resolve 三层级 + 验收 6 条
