@@ -229,7 +229,16 @@ forward:
   **同一份 IPv6 profile 两个脚本给出相反结论**（0/1）。
   现已把 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal` 收编到共享模块
   `skill/scripts/_egern_common.py`，两个脚本都从它 import —— 从结构上消灭拷贝。
-  并新增 `skill/tests/run.sh`（4 fixture × 2 脚本）与 CI 守卫。
+  并新增 `skill/tests/run.sh`（5 fixture × 2 脚本）与 CI 守卫。
+- ⚠️ **（三次核查后）"收编"这个动作本身又引入了一次回归**：`hostpart` 剥 scheme 从
+  「通用剥离」退化成「大小写敏感白名单」，端点写 `HTTPS://223.5.5.5/dns-query` 时
+  `HTTPS` 被当成主机名 ⇒ 同一份配置读数从 **0 high 翻成 9 high**。发布模板端点全小写所以没暴露。
+  已改回大小写不敏感的通用正则，并新增 `skill/tests/scheme_case.yaml` 守卫。
+  **教训：重构式的"等价改写"必须逐输入对拍，测试还绿只说明已覆盖的输入没变。**
+- ⚠️ **（三次核查后）CI 文件曾被静默丢弃**：README 与 commit message 都写着"已加 CI"，
+  但 `.github/workflows/` 从未上传 —— PAT 缺 `workflow` scope 时 GitHub 对含 workflow 的
+  tree 创建返回 **404**（不是 403），发布脚本据此摘掉该文件继续推送。
+  **教训：发布后要用 `git ls-files` 核对交付物，而不是相信发布脚本的 commit message。**
 
 > 📌 **诚实声明**：本项目最长的一条教训就是「审计通过 ≠ 配置可用」，反向同样成立 ——
 > **审计不通过 ≠ 配置不可用**。上面那次 3 high 就是判据的问题，配置本身（IP 字面量端点 + 单值兜底）

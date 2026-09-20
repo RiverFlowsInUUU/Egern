@@ -520,13 +520,18 @@ Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可�
 "<venv>/Scripts/python.exe" scripts/profile_ruleset.py some.list    # 规则集类型分布
 "<venv>/Scripts/python.exe" scripts/weigh_ruleset.py some.list [--sub small.list] [--probe d]  # ★ 规则集"重量"：构成/冗余/深度/加载与匹配耗时/覆盖对比
 
-bash scripts/../tests/run.sh                                       # ★★ 回归测试：4 fixture × 2 脚本 = 8 断言，退出码非 0 即失败
+bash scripts/../tests/run.sh                                       # ★★ 回归测试：5 fixture × 2 脚本 = 10 断言，退出码非 0 即失败
 ```
 
 ⚠️ **运行目录要求**：`check_egern_dns.py` 与 `audit_dns_forward.py` 会 import 同目录的
 `_egern_common.py`（共享工具）。**这三个文件必须在一起**，否则报 `ModuleNotFoundError`。
 `_egern_common.py` 收编了 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal` —— 从结构上消灭了
 "同一判据两份拷贝、改一处漏另一处"的隐患（详见"审计演进"节 v10.2）。
+
+⚠️ **`hostpart()` 剥 scheme 必须用大小写不敏感的通用正则，不能用白名单。**
+白名单（`("https://", "tls://", ...)`）会让 scheme 的**拼法**参与审计结论：端点写成
+`HTTPS://223.5.5.5/dns-query` 时白名单失配，`HTTPS` 被当成主机名，端点从「IP 字面量」
+误判成「待解析域名」，同一份配置读数从 0 high 翻成 9 high。`tests/scheme_case.yaml` 是这条的守卫。
 
 `check_egern_dns.py` 输出 `OK / LOW / HIGH` 三类，有 `HIGH` 时退出码 1，覆盖上面清单 1–15 项。
 清单 16 由 `audit_ruleset_noresolve.py` 单独覆盖（要下载**全部被引用的**规则集，几十秒，不塞进同一个脚本；有 `.ruleset-cache/` 本地缓存，加 `--offline` 可只读缓存）。实测判别力：**原始配置 → HIGH（`Apple_All.list` 13 条），v7 → OK（20 个全过）**。⚠️ 数量会随配置变化：v10 是 **19 个**（少的那 1 个 = `forward` 不再引用 `ChinaDomain.list`）—— 报数变少时先确认是"少引用"而不是"漏扫"。
@@ -557,16 +562,32 @@ v10.2 起（2026-09-20，二次核查报告触发）：⑩ **「靠注释提醒�
 
 ⇒ 固化四条：
 1. ⭐⭐ **共用逻辑必须收编成一个模块，不靠注释同步。** 现为 `scripts/_egern_common.py`，
-   收 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal` / `FOREIGN_DOH`；两个脚本都 import 它。
+   收 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal`；两个脚本都 import 它。
    **判据可以有两处调用点，但实现只能有一处。**
 2. ⭐⭐ **fixture 必须喂给"所有"脚本，而不是常跑的那一个。** 新增 `scripts/../tests/run.sh`
-   （4 fixture × 2 脚本 = 8 断言）+ CI `.github/workflows/audit-regression.yml`。
+   （5 fixture × 2 脚本 = 10 断言）+ CI `.github/workflows/audit-regression.yml`。
    经验：**"只差一点就能抓到"的 bug，恰恰是因为守卫只覆盖了一半**。加守卫时要问："这条断言有没有在
    **每一个**消费方上跑过？"
 3. ⭐ **文档里给的命令必须逐条照着执行一遍。** 这次崩溃的命令就印在 README / docs/04 / skill/README 里。
    文档里的命令是**接口契约**，改脚本后要回填验证（`--drill` 这类可选参数尤其要显式标注"可选"）。
 4. ⭐ **`_egern_common.py` 必须与调用它的脚本同目录。** 用户如果只拷走单个脚本会报 `ModuleNotFoundError`；
    分发/打包时三个文件（`_egern_common.py` + 两个审计脚本）要一起走。
+
+v10.3 起（2026-09-20，三次核查报告触发）：⑪ **"收编共用逻辑"这个动作本身会引入回归 —— 收编时把实现悄悄换掉，比两份拷贝更难发现。**
+本次事故：把 `hostpart` 收进 `_egern_common.py` 时，剥 scheme 从「通用剥离 `if "://" in s: split("://",1)[1]`」
+退化成「大小写敏感白名单 `("https://", "tls://", ...)`」。于是端点写成 `HTTPS://223.5.5.5/dns-query`
+时白名单失配，`HTTPS` 被当成主机名 ⇒ 端点从 IP 字面量误判成待解析域名 ⇒ 同一份配置读数从
+**0 high 翻成 9 high**。发布模板端点全是小写所以没暴露；换任何一个大写 scheme 的配置就翻。
+⇒ 固化三条：
+1. ⭐⭐ **重构"等价改写"必须逐输入对拍，不能只看测试是否还绿。** 测试绿只说明**已覆盖的输入**没变，
+   说明不了"改写等价"。写一个把新旧实现按同一批输入逐一对比的脚本（这次是 16 个输入），
+   差异为 0 才叫等价。
+2. ⭐⭐ **解析器里出现"枚举白名单"就是气味。** `scheme` / 大小写 / 编码这类**输入的表层拼法**，
+   不该有能力改变判定结果。凡是要枚举，先问"漏一个会怎样"——这里漏一个就从 0 high 变 9 high。
+3. ⭐ **"读到的数字"和"声称的结论"要分开核。** 本轮还发现 README/commit 声称"已加 CI"而
+   `.github/workflows/` 从未上传：PAT 缺 `workflow` scope 时 GitHub 对含 workflow 的 tree 创建
+   返回 **404**，发布脚本据此静默摘掉 CI 文件继续推。**发布后要用 `git ls-files` 核对交付物，
+   而不是相信发布脚本的 commit message。**
 
 v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随配置演进失效 —— 改配置后必须重跑判据，且改判据要用"双向回归"守住收紧面。**
 本次事故：v10 删掉了 15 条 DNS 端点路由规则（依据是 `upstreams` 全是 IP 字面量 ⇒ 不需要路由），**我验证了配置侧、没验证脚本侧** —— 而 `group_reach` 的判据有一半是「至少一个端点判给 `DIRECT`」。删掉那些规则 ⇒ 这半句永远不成立 ⇒ 插件把**自有模板**误判 `3 high`、退出码 1。报告结论准确。
@@ -629,6 +650,13 @@ skill/                                       # 本 skill（含全部脚本）
 它从 v8 自用版做**带断言的行级替换**并跑 38 个敏感串的零残留自检 —— 这是唯一正确的入口。
 发布用 `outputs/_publish_to_github.py`（Git Data API 单次提交；空仓库需先落初始化提交，
 否则 `POST /git/blobs` 报 `409 Git Repository is empty`）。方法论见 skill `github-publish-sanitized-repo`。
+
+⚠️ **发布 CI 文件需要 PAT 具备 `workflow` scope。** 只有 `public_repo` 时，GitHub 对
+「包含 `.github/workflows/` 的 tree 创建」返回 **404**（不是 403 —— 它故意不暴露存在性）。
+`_publish_to_github.py` 会把 workflow 文件摘掉、照常推送其余文件 —— 于是 README 写着
+「CI 见 …」而仓库里根本没有 CI（三次核查报告 P1 的真实成因）。
+**发布后必须核对交付物，而不是相信脚本的 commit message**：
+`git ls-files | grep '^\.github/'` 应至少列出 1 个文件。
 
 **脱敏清单（这五类必须洗）**：节点 server/凭据/sni/reality 公钥 → 占位；
 机场订阅 URL（含 token）→ 占位；`mitm.ca_p12` + `ca_passphrase`（个人 CA 私钥）→ **注释掉**；

@@ -89,7 +89,7 @@ forward:
 ② 兜底指向国内组（需要本地解析的境外域名会拿到国内答案，实际影响面仅限 DIRECT 域名）。
 **它们不是缺陷，是设计取舍。**
 
-**回归测试**：`bash skill/tests/run.sh` 把 4 个 fixture 同时喂给两个脚本（8 个断言），退出码非 0 即失败。
+**回归测试**：`bash skill/tests/run.sh` 把 5 个 fixture 同时喂给两个脚本（10 个断言），退出码非 0 即失败。
 CI 见 `.github/workflows/audit-regression.yml`。
 
 ---

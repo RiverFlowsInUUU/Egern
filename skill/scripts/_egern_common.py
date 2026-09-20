@@ -12,10 +12,16 @@
   结论：**靠注释提醒同步两份拷贝是不可靠的。** 本模块把这些共用逻辑收编到一处，
   两个脚本都从这里 import，从结构上消灭拷贝。
 
+后续修正（2026-09-20，三次核查报告 P2）：
+  「收编」这一次动作本身引入了新回归 —— `hostpart()` 剥 scheme 从「通用剥离」
+  退化成「大小写敏感白名单」，于是 `HTTPS://223.5.5.5/dns-query` 被解析出主机名
+  `HTTPS`，端点从 IP 字面量误判成待解析域名，同一份配置读数从 0 high 翻成 9 high。
+  已改回大小写不敏感的通用正则，并由 `tests/scheme_case.yaml` 守卫生效。
+
 用法：
     import os, sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _egern_common import DOMESTIC_RESOLVER_IPS, ep_ip, ip_literal, hostpart, FOREIGN_DOH
+    from _egern_common import DOMESTIC_RESOLVER_IPS, ep_ip, ip_literal, hostpart
 """
 
 import re
@@ -43,32 +49,38 @@ DOMESTIC_RESOLVER_IPS = {
     "1.2.4.8", "210.2.4.8",
 }
 
-# 已知的境外 DoH（用于提示"这些端点需要经代理"）。
-FOREIGN_DOH = {
-    "dns.google", "cloudflare-dns.com", "1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4",
-    "dns.quad9.net", "9.9.9.9", "doh.opendns.com", "208.67.222.222",
-}
-
 _IP4_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
+
+# ⭐ 通用 scheme 前缀：`scheme://`，**大小写不敏感**，不枚举具体 scheme。
+# ⚠️ 不要改成白名单（`("https://", "tls://", ...)`）：那会让 scheme 的拼法参与
+#    审计结论。三次核查报告 P2 的回归正是如此 —— 端点写 `HTTPS://223.5.5.5/dns-query`
+#    时，白名单失配，`HTTPS` 被当成主机名，端点从「IP 字面量」误判成「待解析域名」，
+#    同一份配置的读数从 0 high 翻成 9 high。scheme 拼法不是本工具要审的对象。
+_SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*://")
 
 
 def hostpart(ep):
-    """从端点字符串里取出主机部分（去 scheme、去 path、去 :port）。
+    """从端点字符串里取出主机部分（去 scheme、去 path/query、去 :port）。
 
-    正确处理三种形态：
-      - `https://223.5.5.5/dns-query`  -> `223.5.5.5`
+    正确处理这些形态（scheme 拼法任意、大小写任意）：
+      - `https://223.5.5.5/dns-query`      -> `223.5.5.5`
+      - `HTTPS://223.5.5.5/dns-query`      -> `223.5.5.5`
+      - `dot://223.6.6.6`                  -> `223.6.6.6`
       - `https://[2400:3200::1]/dns-query` -> `2400:3200::1`   ← IPv6（方括号）
-      - `tls://223.5.5.5:853`          -> `223.5.5.5`
+      - `[2400:3200::1]:443`               -> `2400:3200::1`
+      - `tls://223.5.5.5:853`              -> `223.5.5.5`
+      - `dns.google` / `2001:db8::1`       -> 原样
     """
     s = str(ep).strip()
-    for pre in ("https://", "tls://", "quic://", "h3://", "udp://", "http://"):
-        if s.startswith(pre):
-            s = s[len(pre):]
-            break
-    s = s.split("/")[0]
+    m = _SCHEME_RE.match(s)
+    if m:
+        s = s[m.end():]
+    s = s.split("/")[0]                        # 去 path
+    s = s.split("?")[0].split("#")[0]          # 去 query / fragment
     if s.startswith("["):                      # IPv6 带方括号
-        return s[1:s.index("]")] if "]" in s else s.lstrip("[")
-    if s.count(":") == 1:                      # IPv4:port
+        end = s.find("]")
+        return s[1:end] if end != -1 else s.lstrip("[")
+    if s.count(":") == 1:                      # host:port（IPv4 或域名）
         return s.split(":")[0]
     return s                                   # 裸 IPv4 / 裸 IPv6 / 域名
 
@@ -79,11 +91,6 @@ def ip_literal(ep):
     if _IP4_RE.match(host):
         return True
     return ":" in host                         # IPv6 字面量
-
-
-def is_foreign_ip(host):
-    """端点/主机是不是"已知的境外 DoH"。"""
-    return str(host).strip().lower() in FOREIGN_DOH
 
 
 # 兼容旧调用名（audit_dns_forward.py 历史上用的是 ep_ip）

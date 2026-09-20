@@ -46,7 +46,7 @@ python "$S/audit_dns_forward.py"           Profile.yaml          # 期望 通过
 python "$S/profile_ruleset.py"            ChinaMax.list         # 规则集类型分布
 python "$S/probe_dns_endpoints.py"        Profile.yaml          # 端点实测
 
-bash ./skill/tests/run.sh                                       # 回归测试（4 fixture × 2 脚本 = 8 断言）
+bash ./skill/tests/run.sh                                       # 回归测试（5 fixture × 2 脚本 = 10 断言）
 ```
 
 退出码 **0 = 通过**，可直接接进 CI 或提交前检查。
@@ -56,6 +56,10 @@ bash ./skill/tests/run.sh                                       # 回归测试�
 > `audit_dns_forward.py`，确保两个脚本对同一份配置给出一致结论。CI：`.github/workflows/audit-regression.yml`。
 > 共享逻辑（`hostpart` / `ip_literal` / `DOMESTIC_RESOLVER_IPS`）集中在 `scripts/_egern_common.py`，
 > 避免"同一判据两份拷贝、改一处漏另一处"。两个脚本的运行目录里必须有这个文件。
+>
+> ⚠️ 发布 `.github/workflows/` 下的文件需要 PAT 具备 **`workflow` scope**。只有 `public_repo` 时
+> GitHub 会返回 **404**（不是 403），`outputs/_publish_to_github.py` 会静默摘掉 CI 文件继续推送 ——
+> 于是文档写着「CI 见 …」而仓库里根本没有。推完务必用 `git ls-files .github` 核一遍。
 
 ## 三条必须记住的判据
 

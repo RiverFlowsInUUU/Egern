@@ -21,7 +21,6 @@ import gc
 import io
 import os
 import random
-import sys
 import time
 
 DOMAIN_TYPES = ("DOMAIN-SUFFIX", "DOMAIN", "DOMAIN-KEYWORD")
@@ -151,7 +150,8 @@ def main():
 
     # ---- 加载与匹配 ----
     t0 = time.perf_counter()
-    raw = io.open(path, encoding="utf-8", errors="replace").read()
+    # 这一次读取只为了量「读盘耗时」，结果本身不参与后续计算 —— 因此不绑定变量。
+    io.open(path, encoding="utf-8", errors="replace").read()
     t_read = time.perf_counter() - t0
     base = rss_mb()
     t0 = time.perf_counter()

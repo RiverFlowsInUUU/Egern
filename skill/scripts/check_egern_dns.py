@@ -29,16 +29,15 @@ import sys
 
 import yaml
 
-# ⭐ 共享工具：DOMESTIC_RESOLVER_IPS / hostpart / ip_literal 等收编在 _egern_common.py，
+# ⭐ 共享工具：DOMESTIC_RESOLVER_IPS / hostpart 等收编在 _egern_common.py，
 #    与 audit_dns_forward.py 共用同一份实现 —— 不再有「两份拷贝靠注释同步」的隐患。
 #    （二次核查报告 P1：判据本体同步了、helper 没同步，两脚本会对同一配置给出相反结论。）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _egern_common import (  # noqa: E402
-    DOMESTIC_RESOLVER_IPS, FOREIGN_DOH, hostpart as _common_hostpart, ip_literal,
+    DOMESTIC_RESOLVER_IPS, hostpart as _common_hostpart,
 )
 
 IPV4 = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
-SCHEME = re.compile(r"^(?:udp|tls|https|quic|h3)://", re.I)
 RULE_TYPES = (
     "domain", "domain_suffix", "domain_keyword", "domain_wildcard", "domain_regex",
     "geoip", "ip_cidr", "ip_cidr6", "asn", "rule_set", "url_regex", "user_agent",
@@ -306,11 +305,11 @@ def audit(path):
                 lv = val.lower()
                 if lv == "system":
                     high.append(
-                        f"forward 兜底 = system -> 未命中规则的域名直接交给系统 DNS，蜂窝下就是运营商"
+                        "forward 兜底 = system -> 未命中规则的域名直接交给系统 DNS，蜂窝下就是运营商"
                     )
                     continue
                 if lv in ("bootstrap", "bootstrap_dns"):
-                    low.append(f"forward 兜底 = bootstrap -> 明文 UDP:53，蜂窝上会被运营商接管")
+                    low.append("forward 兜底 = bootstrap -> 明文 UDP:53，蜂窝上会被运营商接管")
                     continue
                 reach, reason, detail = group_reach(val)
                 if reach:
