@@ -1,130 +1,164 @@
 # Egern 防 DNS 泄露配置模板
 
-一份面向 [Egern](https://egernapp.com) 的代理配置模板。它不绑定任何特定节点或订阅，
-核心目标只有一个：**在不依赖外部信息的前提下，彻底消除 DNS 泄露面**。
+<p align="center">
+  <img src="https://img.shields.io/badge/Egern-Client-1f6feb?style=flat-square" alt="Egern">
+  <img src="https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square" alt="DNS Zero Leak">
+  <img src="https://img.shields.io/badge/License-MIT-dfb317?style=flat-square" alt="License MIT">
+</p>
+
+<p align="center">
+  <b>面向 Egern 的防 DNS 泄露配置模板</b><br>
+  <i>不绑定任何节点与订阅 —— 只做一件事：消除 DNS 泄露面</i>
+</p>
+
+<p align="center">
+  <a href="#-快速开始">快速开始</a> •
+  <a href="#-文件结构">文件结构</a> •
+  <a href="#-三个版本">三个版本</a> •
+  <a href="#-防泄露原理">防泄露原理</a> •
+  <a href="#-审计读数">审计读数</a> •
+  <a href="#-规则来源">规则来源</a> •
+  <a href="#️-注意事项">注意事项</a>
+</p>
 
 ---
 
-## 仓库内容
+## 🚀 快速开始
 
-| 路径 | 说明 |
-|---|---|
-| `profiles/v2.yaml` | **推荐** · 带注释版，每段都附有原理说明 |
-| `profiles/v2.min.yaml` | **推荐** · 纯配置版，与上面内容一致，仅去掉注释 |
-| `profiles/v1.yaml` | 旧版 · 带注释版。`dns` 段较冗长（40 行），功能与 v2 等价 |
-| `profiles/v1.min.yaml` | 旧版 · 纯配置版 |
-| `icons/` | 模板用到的全部分流组图标（已整合进本仓库） |
-| `docs/` | 原理深挖、审计清单与实测谱系 |
-| `skill/` | 配套的 DNS 泄露诊断 / 加固脚本 |
-
-> **推荐用 v2。** v1 与 v2 的差别**只在 `dns` 段**，其余顶层段逐字相同。
-> v2 把 `dns` 段从 40 行压到 22 行：删掉了没有任何引用点的 `hosts:` 段、
-> 与 catch-all 语义完全重叠的第二条兜底规则，并把 6 个端点收敛为「2 机构 × 2 协议」的 4 个。
-> 防泄露能力经仓库自带审计脚本实测**逐项等价** —— 差异仅为被删端点各自的逐条检查项，
-> 结构性判据（兜底组直连可达 / 无待解析项 / `proxy_nameservers` 已设置）全部照旧通过。
->
-> 同版本内「带注释」与「纯配置」两份**内容完全一致**，区别只在注释。按习惯取用其一即可。
->
-> ⚠️ **别和「配置迭代谱系」混淆**：`docs/06` 里的 v1~v10 指的是本配置**自身的历史迭代**
-> （v7 引入 `proxy_nameservers`、v10 塌缩 `forward` …）；而 `profiles/v1.yaml` / `v2.yaml`
-> 指的是**文件版本**（v1 = 初版，v2 = DNS 段精简版）。两者是不同维度，别对号入座。
-
----
-
-## 配置框架
-
-模板由若干顶层段组成，各司其职：
-
-- **`proxies`** —— 你的节点。模板此处为空 `[]`，由你自行填写；填写后把下方分流组的
-  `policies` 填上对应节点名（或订阅组名）。
-- **`policy_groups`** —— 分流组，本模板用到四种类型：
-  - `select`：手动选路（如 `Proxy` / `Final` / 各类 App 组）
-  - `smart`：智能选优 —— 组内多轮测速、按延迟/抖动/可靠性综合打分，自动选当前最稳的节点。
-    模板里的地区组（`Hong Kong` / `USA` / `Japan` …）是 `smart` 再配一条 `filter` 正则，
-    把订阅里名字匹配该地区的节点筛进来（**「按正则归类」是 `filter` 干的，不是 `smart` 本身**）。
-  - `fallback`：故障转移 —— 按 `policies` 顺序依次尝试，选**第一个可用**的节点；当前节点不可用时
-    才切到下一个，高优先级节点恢复后自动切回。（**不是**「按延迟选优」，那是 `auto_test` 的行为。）
-  - `external`：从订阅 URL 拉取节点（模板里是 `sub.example.com` 占位）
-  - 组与组之间可以互相引用；暂时没有成员的组留 `[]`，你再补。
-- **`rules`** —— 匹配表：域名 / IP / 规则集 / `geoip` → 策略（`DIRECT` / 某个代理组 / `REJECT`）。
-  这是「什么流量走哪里」的总指挥。
-- **`dns`** —— 双 DNS 模型的核心（见下）。
-- 其余（`real_ip_domains`、`*_latency_test_url`、`geoip_db_url` 等）—— 全局开关、测速地址、
-  地理库来源等辅助项。
-
----
-
-## 防泄露原理
-
-理解这一节，只需记住一个事实：**Egern 有两套 DNS**。
-
-1. **默认 DNS** —— 处理业务流量的域名解析。按 `dns.forward` 匹配上游，未命中则回退到
-   `dns.bootstrap`。
-2. **代理 DNS**（`dns.proxy_nameservers`）—— 只负责解析「节点 `server` 里的域名」，且强制在
-   **直连侧**完成（代理还没通，不可能让代理去解析自己的地址）。
-
-**泄露只会发生在一条路径上：明文 `UDP:53` 的 bootstrap。** 本模板用三条原则让它「无事可做」：
-
-### ① 端点全部写成 IP 字面量
-`dns.upstreams` 与 `dns.proxy_nameservers` 里**不出现任何主机名**。
-没有需要解析的目标 ⇒ bootstrap 的用途①（解析加密 DNS 服务器主机名）被直接消灭。
-
-### ② `no_resolve` 成对出现
-所有 **IP 类规则**（`geoip` / `ip_cidr` …）都带 `no_resolve` —— 它们只匹配「已经是 IP」的连接，
-不再触发任何域名解析（否则每个走到它的域名都会被强制本地解析一次，正是泄露来源）。
-代价是 IP 规则不再能靠解析判定域名归属，所以必须有一份**域名条目足够多的国内直连规则集**兜住域名，
-例如 Loyalsoldier `direct.txt`（11 万条，纯域名）。两者成对，缺一不可。
-
-### ③ `forward` 塌缩为两条兜底
-```yaml
-forward:
-  - domain_regex: '.'        value: Domestic-DNS
-  - domain_wildcard: '*'     value: Domestic-DNS
 ```
-原因有两层，决定了「不必在 forward 里列举任何节点 / 订阅域名」：
-- 配了 `proxy_nameservers` 后，**代理 DNS 会跳过 forward** —— 节点域名根本不走这里；
-- 兜底 `value` 为单值时，**规则顺序与域名清单都不影响结果**。
+1. 挑一份配置   →  推荐 profiles/v2.yaml
+2. 填节点       →  proxies 段（模板为空 []）
+3. 补分流组     →  把空的 policies: [] 填上节点名 / 订阅组名
+4. 导入 Egern   →  完成
+```
 
-于是 forward 与订阅彻底解耦：你换十个订阅，这里一行都不用改。防泄露的安全性由
-「兜底组本身是否直连可达」承担，而非由「在 forward 里罗列域名」承担。
+**必须动手的两处**（不填则代理不通）：
 
-**结论**：启动期、节点域名解析、业务解析三条路径，都不再接触明文 `:53`。
+| 位置 | 现状 | 填什么 |
+|:----:|:----:|:------:|
+| `proxies` | `[]` | 你的节点 |
+| `policy_groups` 里空的 `policies` | `[]` | 节点名或订阅组名 |
 
-### 审计读数
-本仓库附带的审计脚本可直接对本模板运行（`skill/scripts/`），**四个脚本全绿**：
-
-| 脚本 | 本模板读数 |
-|---|---|
-| `check_egern_dns.py` | ✅ 0 high（退出码 0）—— 另有 2 条 `LOW`（见下） |
-| `audit_ruleset_noresolve.py` | ✅ OK 19/19 规则集（IP 类条目全部带 `no-resolve`） |
-| `audit_routing_coverage.py` | ✅ 15/15 国内探针 `DIRECT` |
-| `audit_dns_forward.py` | ✅ 通过（退出码 0；`--drill` 可选，加不加都通过） |
-
-两条 `LOW` 都是**刻意为之、需你确认**的：① 设置了 `proxy_nameservers`（它会成为代理侧解析的唯一出口）；
-② 兜底指向国内组（需要本地解析的境外域名会拿到国内答案，实际影响面仅限 DIRECT 域名）。
-**它们不是缺陷，是设计取舍。**
-
-**回归测试**：`bash skill/tests/run.sh` 把 5 个 fixture 同时喂给两个脚本（10 个断言），退出码非 0 即失败。
-CI 见 `.github/workflows/audit-regression.yml`。
+订阅方式：把 `external` 组里的 `sub.example.com?token=REPLACE_WITH_YOUR_TOKEN` 换成你自己的订阅地址。
 
 ---
 
-## 使用
+## 📁 文件结构
 
-1. 在 `proxies` 填入节点（模板此处为空 `[]`），或用 `policy_groups` 里 `external` 组的订阅 URL（把
-   `sub.example.com?token=REPLACE_WITH_YOUR_TOKEN` 换成你自己的）。
-2. 把空 `[]` 的分流组填上节点名 / 订阅组名。
-3. 按需增删 `rules` 引用的规则集。
-
-需要逐段深挖或跑审计，见 [`docs/`](docs/) 与 [`skill/`](skill/)。
-被本文省略的全部细节——逐段框架、原理推导、v1–v10 版本谱系、18 项审计清单、规则集开销实测、已知取舍，以及配套 Skill 的方法论——集中于 [`DetailsReadme/`](DetailsReadme/)。
+```
+egern-anti-dns-leak/
+├── profiles/
+│   ├── v2.yaml          # 推荐 · 带注释
+│   ├── v2.min.yaml      # 推荐 · 纯配置
+│   ├── v1.yaml          # 旧版 · 带注释
+│   ├── v1.min.yaml      # 旧版 · 纯配置
+│   ├── v0.yaml          # 极简 · 带注释
+│   └── v0.min.yaml      # 极简 · 纯配置
+├── icons/               # 分流组图标（已内置，不跨项目引用）
+├── docs/                # 6 篇专题（原理 / 清单 / 谱系）
+├── DetailsReadme/       # 完整技术文档
+└── skill/               # 审计脚本 + 回归测试
+```
 
 ---
 
-## 图标与许可
+## 📦 三个版本
 
-- 模板用到的分流组图标整合自 [RiverFlowsInUUU/Rule]、[jnlaoshu/MySelf]、
-  [Koolson/Qure](https://github.com/Koolson/Qure)，已统一存入本仓库 `icons/`，
-  **不跨项目引用任何图标地址**。
-- 本项目采用 MIT 许可证，见 [LICENSE](LICENSE)。
+| 版本 | 策略组 | 规则 | 定位 |
+|:----:|:------:|:----:|:-----|
+| **`v2`** ⭐ | 29 | 24 | **推荐** · `dns` 段精简到 22 行 |
+| `v1` | 29 | 24 | 旧版 · `dns` 段 40 行，功能与 v2 等价 |
+| `v0` | 4 | 9 | 极简裁剪 · 只留 `Proxy` / `AI` / `AD` / `Final` |
+
+- **同版本的两份**（`.yaml` 带注释 / `.min.yaml` 纯配置）**内容完全一致**，只差注释，取用其一即可。
+- **v1 与 v2 的差别只在 `dns` 段**，其余顶层段逐字相同。防泄露能力经审计脚本实测**逐项等价**。
+- ⚠️ 别把文件名 `v1` / `v2` 与 [`docs/06`](docs/06-实测数据与版本谱系.md) 里的 **v1~v10 迭代谱系**混淆 —— 前者是**文件版本**，后者是配置**自身的历史迭代**，两个维度。
+
+---
+
+## 🌐 防泄露原理
+
+**Egern 有两套 DNS**，理解这一点就够了：
+
+| DNS | 负责 | 上游怎么选 |
+|:---:|:----:|:----------:|
+| **默认 DNS** | 业务流量解析 | 按 `dns.forward` 匹配；未命中回退到 `bootstrap` |
+| **代理 DNS** | 只解析节点 `server` 里的域名 | `dns.proxy_nameservers`，**强制直连**（代理还没通，不可能让它解析自己的地址） |
+
+**泄露只有一条出口：明文 `UDP:53` 的 `bootstrap`。** 本模板用三条原则让它无事可做：
+
+| # | 原则 | 做法 |
+|:-:|:----:|:-----|
+| ① | **端点全写 IP 字面量** | `upstreams` / `proxy_nameservers` 里没有任何主机名 ⇒ 没有待解析的目标 |
+| ② | **`no_resolve` 成对交付** | 所有 IP 类规则带 `no_resolve`；代价是用一份纯域名规则集（`direct.txt`，11 万条）补回域名判定 |
+| ③ | **`forward` 塌缩为兜底** | 配了 `proxy_nameservers` 后代理 DNS 会**跳过** `forward` ⇒ 换订阅不用改一行 |
+
+启动期、节点域名解析、业务解析 —— 三条路径都不再接触明文 `:53`。
+
+> 完整推导（含两个反直觉事实、兜底组「直连可达」判据）见 [`DetailsReadme` §2](DetailsReadme/DetailsReadme.md#2-防泄露原理从机制到推导) 与 [`docs/02`](docs/02-DNS为什么会泄露.md)。
+
+---
+
+## ✅ 审计读数
+
+本仓库自带审计脚本，可直接对模板运行（[`skill/scripts/`](skill/scripts/)）：
+
+| 脚本 | 读数 |
+|:----:|:----:|
+| `check_egern_dns.py` | ✅ **0 high**（退出码 0），另有 2 条 `LOW` |
+| `audit_ruleset_noresolve.py` | ✅ 全部通过（v1/v2 各 21 个规则集 · v0 为 6 个） |
+| `audit_routing_coverage.py` | ✅ 15/15 国内探针命中 `DIRECT` |
+| `audit_dns_forward.py` | ✅ 通过（带 / 不带 `--drill` 都通过） |
+
+**那 2 条 `LOW` 不是缺陷，是设计取舍** —— ① 设置了 `proxy_nameservers`（它成为代理侧解析的唯一出口）；② 兜底指向国内组（需要本地解析的境外域名会拿到国内答案，实际影响面仅限 `DIRECT` 域名）。详见 [`DetailsReadme` §6](DetailsReadme/DetailsReadme.md#6-已知代价与取舍)。
+
+**回归测试**：`bash skill/tests/run.sh` —— 5 个 fixture × 2 个脚本 = 10 个断言，退出码非 0 即失败。
+
+---
+
+## 📚 规则来源
+
+| 来源 | 用在哪 |
+|:----:|:------:|
+| [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) | 各分区规则集（ChatGPT / Google / Telegram …） |
+| [ACL4SSR/ACL4SSR](https://github.com/ACL4SSR/ACL4SSR) | `AI.list` |
+| [Loyalsoldier/surge-rules](https://github.com/Loyalsoldier/surge-rules) | `direct.txt` —— 国内直连主力（11 万条纯域名） |
+| [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip) | `Country.mmdb` / `GeoLite2-ASN.mmdb` |
+| [TG-Twilight/AWAvenue-Ads-Rule](https://github.com/TG-Twilight/AWAvenue-Ads-Rule) | 广告拦截 |
+| [RiverFlowsInUUU/jinx-ads-rules](https://github.com/RiverFlowsInUUU/jinx-ads-rules) | 白名单守卫 + 广告拦截 |
+
+---
+
+## ⚠️ 注意事项
+
+| 项目 | 说明 |
+|:----:|:-----|
+| 🔗 **节点必填** | `proxies` 是空 `[]`，不填则代理不通 |
+| 🎯 **分流组必填** | 空的 `policies: []` 要填节点名，否则 `Final → Proxy` 是断的 |
+| 🧩 **`v0` 尤其注意** | 它只留 4 个组，`Proxy` 为空时**所有走代理的流量都不通** |
+| 📄 **CI 文件** | `.github/workflows/` 需要 PAT 带 `workflow` scope，否则推不上去（GitHub 返回 404 而非 403） |
+| 🔀 **命名歧义** | 文件名 `v1` / `v2` ≠ `docs/06` 的迭代谱系 `v1~v10` |
+
+---
+
+## 📖 更多文档
+
+| 文档 | 内容 |
+|:----:|:-----|
+| [`DetailsReadme/`](DetailsReadme/) | 逐段详解 · 原理推导 · v1–v10 谱系 · 18 项审计清单 · 规则集开销实测 · 已知取舍 · FAQ |
+| [`docs/`](docs/) | 6 篇专题：DNS 怎么工作 / 为什么泄露 / 加固清单 / 逐段讲解 / no_resolve 成对交付 / 实测谱系 |
+| [`skill/`](skill/) | 审计脚本、回归测试与方法论 |
+
+---
+
+## 🎨 图标与许可
+
+- 分流组图标整合自 [RiverFlowsInUUU/Rule](https://github.com/RiverFlowsInUUU/Rule)、[jnlaoshu/MySelf](https://github.com/jnlaoshu/MySelf)、[Koolson/Qure](https://github.com/Koolson/Qure)，已统一存入本仓库 `icons/`，**不跨项目引用任何图标地址**。
+- 本项目采用 **MIT** 许可证，见 [LICENSE](LICENSE)。
 - 第三方规则集（blackmatrix7 / ACL4SSR / AWAvenue / jinx-ads-rules / Qure 等）版权归其原作者。
+
+---
+
+<p align="center">
+  <sub>让 DNS 无处可漏 🐈</sub>
+</p>
