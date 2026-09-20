@@ -285,7 +285,15 @@ v3 的审计结果是 `0 high / 1 low`，但用户实测**持续泄露到中国�
 - **(b) 新判据**：端点全为 IP 字面量，**且至少一个是已知的国内解析器 IP**（`check_egern_dns.py` 里的 `DOMESTIC_RESOLVER_IPS` 白名单：223.5.5.5 / 223.6.6.6 / 119.29.29.29 / 1.12.12.12 / 120.53.53.53 / 114.114.114.114 / 180.76.76.76 …）—— 国内到这些 IP 的可达性是**公共事实**，不需要在 profile 里用路由来"证明"。
 
 ❗ **绝不要采纳「端点全为 IP 即充分」这种更宽的写法** —— 一个全为境外 IP 的组（如纯 `8.8.8.8`）虽是 IP 字面量，却必须经代理才可达，那会**直接回退到坑 13 的 v5 事故形态**。放宽必须保留收紧面。
-回归守卫：`scripts/` 同目录外的三份合成 profile（全境外 IP → 应 HIGH；主机名端点 → 应 HIGH；显式 `ip_cidr→DIRECT` → 应通过），改判据后必须三个都复跑。
+回归守卫：`tests/` 目录下有三份合成 profile —— **改 `group_reach` 判据后必须三个都跑**：
+
+| profile | 构造 | 期望 | 命令 |
+|---|---|---|---|
+| `tests/bad_foreign.yaml` | 兜底组端点全为**境外** IP（`8.8.8.8` / `1.1.1.1`） | **HIGH + 退出码 1** | `check_egern_dns.py tests/bad_foreign.yaml` |
+| `tests/bad_hostname.yaml` | 兜底组端点含**主机名**（`dns.alidns.com`） | **HIGH + 退出码 1** | `check_egern_dns.py tests/bad_hostname.yaml` |
+| `tests/ok_route.yaml` | 兜底组端点全为国内 IP **且有显式 `ip_cidr → DIRECT`** | **通过 + 退出码 0** | `check_egern_dns.py tests/ok_route.yaml` |
+
+前两个是**收紧面**（证明判据没被放宽成"全 IP 即安全"），第三个是**放行面**（证明旧判据路径仍有效）。
 
 ⭐ **同一判据只要在第二处有实现，就必须在注释里互指。** `audit_dns_forward.py` 的 `endpoint_route`/`direct_ips` 与 `check_egern_dns.py` 的 `group_reach` 是**同一判据的副本** —— 只改一个，两个脚本就会给出相反结论（比没有脚本更糟）。改判据时**两处一起改**，并跑 `check_egern_dns.py` + `audit_dns_forward.py --drill` 双确认。
 
