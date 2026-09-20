@@ -337,7 +337,7 @@ rules:
     disabled: false
 - rule_set:
     name: AI
-    match: AI
+    match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
     policy: AI
     disabled: false
 - rule_set:
@@ -367,6 +367,7 @@ rules:
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Proxy/Proxy.list
     policy: Proxy
+    disabled: true
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Apple/Apple_All_No_Resolve.list
     policy: DIRECT
@@ -374,13 +375,8 @@ rules:
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/WeChat/WeChat.list
     policy: WeChat
-- domain_suffix:
-    name: 小红书 CDN
-    match: xhscdn.com
-    policy: DIRECT
-    disabled: false
 - rule_set:
-    match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/ChinaMax/ChinaMax_All_No_Resolve.list
+    match: https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/direct.txt
     policy: DIRECT
 - domain_suffix:
     match: cn

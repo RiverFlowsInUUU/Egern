@@ -81,11 +81,11 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 **直连三件套**（决定国内流量不走代理）：
 1. `Lan.list` —— 局域网。
 2. `Apple_All_No_Resolve.list` —— Apple 域名 + 带 `no-resolve` 的 IP，既做直连判定又不重新触发解析。
-3. **`ChinaMax_All_No_Resolve.list`** —— 含 111,332 条域名 + 12,473 条 IP（IP 全带 `no-resolve`），是「国内域名直连」的主力。
+3. **国内域名规则集（Loyalsoldier `direct.txt`）** —— 111,160 条**纯域名**（110,607 `DOMAIN-SUFFIX` + 553 `DOMAIN`，零 IP 条目），是「国内域名直连」的主力。纯域名规则只做字符串匹配、不触发解析，因此无需 `no_resolve`；「已经是 IP 的连接」由下方 `geoip: CN` 兜住。
 
 **默认出口链**：未命中任何规则集的域名 → `default` 规则（`policy: Final`）→ `Final` 组唯一成员是 `Proxy` → 走代理。这类流量由**节点远程解析**，不经过本地 `dns:` 段，日志里表现为 `default → Final → Proxy`。
 
-> ⚠️ 关键绑定：`geoip: CN`（`no_resolve: true`）**只对已经是 IP 的连接生效**，国内域名的直连**完全依赖 `ChinaMax_All_No_Resolve.list` 那条域名规则**。两者绑定，动一条必须看另一条（详见 2.3 / 清单 17）。
+> ⚠️ 关键绑定：`geoip: CN`（`no_resolve: true`）**只对已经是 IP 的连接生效**，国内域名的直连**完全依赖那个纯域名国内规则集（`direct.txt`）**。两者绑定，动一条必须看另一条（详见 2.3 / 清单 17）。
 
 ### 1.5 `dns` —— 双 DNS 模型核心
 
@@ -137,7 +137,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 `dns.upstreams` 与 `dns.proxy_nameservers` 里**不出现任何主机名**。没有需要解析的目标 ⇒ 用途①被直接消灭（清单 1）。
 
 **② `no_resolve` 成对出现（这是「用解析换分流」的开关）**
-所有 IP 类规则（`geoip` / `ip_cidr` / `ip_cidr6` / `asn`）都带 `no_resolve`，它们只匹配「已经是 IP」的连接，不再触发任何域名解析。需要靠域名判定归属的国内直连，由**带域名的规则集**（`ChinaMax_All_No_Resolve.list`）承接——它既有域名条目做直连判定，又有带 `no-resolve` 的 IP 条目不重新触发解析。两者绑定，缺一不可（清单 5 / 17）。
+所有 IP 类规则（`geoip` / `ip_cidr` / `ip_cidr6` / `asn`）都带 `no_resolve`，它们只匹配「已经是 IP」的连接，不再触发任何域名解析。需要靠域名判定归属的国内直连，由**纯域名的国内规则集**（Loyalsoldier `direct.txt`，11 万条）承接——域名规则只做字符串匹配、不触发解析，故无需 `no_resolve`。两者绑定，缺一不可（清单 5 / 17）。
 
 > `no_resolve` 有三个层级，别混：
 > - **规则级**：写在 `rules:` 里的 `geoip/ip_cidr/...`，官方明说只适用这四类；写在 `rule_set` 规则上**不生效**。
@@ -363,21 +363,31 @@ S="skill/scripts"
 不会。走代理的域名由节点远程解析，根本不经过本地 `dns` 段；兜底组只服务 DIRECT 域名、节点域名、profile 自身依赖。而且「泄露到运营商」（不可撤销）比「答案被污染」（对国内/Apple 域名反而更快更准）致命得多。兜底组的唯一判据是「直连可达」，不是「指向境外」。
 
 **Q3：为什么 `geoip: CN` 不能单独承担国内直连？**
-`geoip: CN`（带 `no_resolve`）只对「已经是 IP」的连接生效。国内域名的直连完全依赖带域名的规则集（`ChinaMax_All_No_Resolve.list`）。给 IP 规则补 `no_resolve` 会同时关掉「靠解析判 IP 归属」那条直连路径——所以补 `no_resolve` 的同一时刻，必须确认有一份含大量域名条目的国内规则集。这是清单 17 的核心。
+`geoip: CN`（带 `no_resolve`）只对「已经是 IP」的连接生效。国内域名的直连完全依赖那份**纯域名的国内规则集**（`direct.txt`）。给 IP 规则补 `no_resolve` 会同时关掉「靠解析判 IP 归属」那条直连路径——所以补 `no_resolve` 的同一时刻，必须确认有一份含大量域名条目的国内规则集。这是清单 17 的核心。
 
-**Q4：`Foreign-DNS` 被注释了，我还能用吗？**
+**Q4：规则集里的 `no-resolve` 是必备的吗？**
+不是「所有规则集都要」，而是**只有能匹配 IP 的规则才需要**：
+- **纯域名规则集**（`direct.txt`、多数分区表）——只做域名串匹配，**任何情况下都不触发解析** ⇒ `no-resolve` 是空操作，写不写都一样，不是必需的。
+- **含 IP-CIDR / IP-CIDR6 / IP-ASN 条目的规则集**（历史上 `Apple_All.list` 有 13 条裸 IP、`ChinaMax.list` 有 12,472 条 IP）——这些 IP 条目若不带 `no-resolve`，**每个走到该规则的域名都会被强制本地解析一次**（泄露来源 + 额外延迟）⇒ 这几条 IP 必须带 `no-resolve`。
+- **profile 级 IP 规则**（`geoip` / `ip_cidr` / `asn`）——同理必须带 `no_resolve`。
+
+一句话：**`no-resolve` 是「IP 规则的开关」，与域名规则无关。** 判据是「这条规则能不能匹配 IP」，而不是「别人的配置里写了没写」。代价见 Q3：给 IP 规则关掉解析判定后，必须用域名规则补回来。
+
+> **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **19 个**远程规则集中，**9 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
+
+**Q5：`Foreign-DNS` 被注释了，我还能用吗？**
 能。取消注释，并把 forward 兜底 `value` 改回 `Foreign-DNS` 即可。但注意：若它作兜底且代理未就绪，会掉进明文 `:53`。v10 默认用国内组兜底，正是为了避免这条路径。
 
-**Q5：模板为什么没有示例节点？**
+**Q6：模板为什么没有示例节点？**
 避免占位节点在分流组里留下悬空引用（过度设计）。你填真实节点后，再把对应组的 `policies` 填上节点名 / 订阅组名。
 
-**Q6：图标为什么都收进本仓库 `icons/`？**
+**Q7：图标为什么都收进本仓库 `icons/`？**
 为了避免模板跨项目引用图标地址（你的项目或别人的项目）。26 个图标已整合进 `icons/`，模板全部以本仓库原始地址引用，并保留来源署名。
 
-**Q7：两个模板文件有什么区别？**
+**Q8：两个模板文件有什么区别？**
 内容完全一致，仅注释差异。`*.template.yaml` 带注释（每段附原理），`*.template.min.yaml` 纯配置。按习惯取用其一。
 
-**Q8：审计全绿就安全了吗？**
+**Q9：审计全绿就安全了吗？**
 不。本项目连续 5 次「脚本 0 high、实测仍有问题」，根因是审计维度缺失（没看规则集文件、没看分流覆盖）。必须把每个新维度补成可复跑脚本，而不是重跑同一脚本。详见第 3 节 / 清单 16、17。
 
 ---
