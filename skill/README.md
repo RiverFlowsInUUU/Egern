@@ -15,13 +15,15 @@ cp -r skill ~/.workbuddy/skills/egern-profile-dns-hardening
 
 | 文件 | 作用 |
 |---|---|
-| `SKILL.md` | 方法论主体：Egern 双轨 DNS 模型、**17 项审计清单**、加固模板、**17 个已踩过的坑**、验收 6 条、官方文档入口 |
+| `SKILL.md` | 方法论主体：Egern 双轨 DNS 模型、**18 项审计清单**、加固模板、**18 个已踩过的坑**、验收 7 条、官方文档入口 |
 | `scripts/check_egern_dns.py` | **profile 层审计**（清单 1–15）。检查端点是否 IP 字面量、兜底组是否"直连可达"、IP 规则是否带 `no_resolve`、策略名能否解析、死规则等 |
 | `scripts/audit_ruleset_noresolve.py` | **规则集层审计**（清单 16）。下载全部被引用的远程规则集，数出"缺 `no-resolve` 的 IP 条目" |
 | `scripts/audit_routing_coverage.py` | **分流覆盖审计**（清单 17）。域名 → 命中规则 → 策略；15 个**非 `.cn`** 国内探针 + 7 个境外探针 |
+| `scripts/audit_dns_forward.py` | **forward 单值性 / 订阅耦合审计**（清单 18）。判断 `forward` 的 value 是否单值、有没有把节点域名写死、`--drill` 用合成"未来订阅"域名演练 |
 | `scripts/profile_ruleset.py` | 规则集类型分布（识破"名字骗人"，例如 `ChinaMax.list` 其实 98.6% 是 IP） |
 | `scripts/probe_dns_endpoints.py` | 逐个实测加密 DNS 端点（DoH 线格式 / DoT 853 握手 + 证书） |
 | `scripts/probe_doh.py` | 只测 DoH 线格式（判端点死活**只能**用这个，不能用 JSON API） |
+| `scripts/weigh_ruleset.py` | 规则集"重量"：构成 / 冗余 / 深度 / 耗时 / 覆盖对比（评估大规则集的内存与加载代价） |
 
 ## 依赖
 
@@ -39,6 +41,7 @@ S=./skill/scripts
 python "$S/check_egern_dns.py"            Profile.yaml          # 期望 0 high
 python "$S/audit_ruleset_noresolve.py"    Profile.yaml          # 期望 OK
 python "$S/audit_routing_coverage.py"     Profile.yaml          # 期望 15/15 DIRECT
+python "$S/audit_dns_forward.py"           Profile.yaml          # 期望 通过（forward 与订阅解耦）
 python "$S/profile_ruleset.py"            ChinaMax.list         # 规则集类型分布
 python "$S/probe_dns_endpoints.py"        Profile.yaml          # 端点实测
 ```

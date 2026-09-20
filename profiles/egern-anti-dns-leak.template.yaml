@@ -34,7 +34,7 @@ dns:
   # ⇒ 所以本节的目标不是「给 bootstrap 换个更安全的服务器」（国内不存在可达的境外
   #    UDP:53 解析器），而是让 bootstrap 的两条用途都无事可做：
   #      用途① 用 IP 字面量端点消灭（见 upstreams）；
-  #      用途② 让 forward 兜底指向一个「不依赖代理也永远活着」的组（见 forward 第 4 条）。
+  #      用途② 让 forward 兜底指向一个「不依赖代理也永远活着」的组（见 forward 的两条兜底）。
   # ================================================================ 启动 DNS
   # 剩下的作用：极端情况下（所有加密上游同时不可用）的最后一道明文回退。
   # 列 3 个国内大厂明文 IP，只为把「全失败 → 掉到系统 DNS（电信）」的概率压到最低。
@@ -60,10 +60,10 @@ dns:
     - https://120.53.53.53/dns-query
     - tls://223.5.5.5
     - tls://1.12.12.12
-    # ---- 境外加密 DNS（v6 起不再被 forward 引用，保留为 A/B 备用）-------------
+    # ---- 境外加密 DNS（v10 起无任何引用，保留为 A/B 备用，不影响泄露面）-------------
     # ⚠️ 本组从 v6 起从 forward 兜底上摘了下来：它的端点必须经代理才可达，把兜底
     #    挂在它身上等于「先有代理，才敢解析」—— 代理未就绪时那次解析会掉进 bootstrap
-    #    明文，在电信蜂窝上就是泄露给电信。改用 Domestic-DNS 兜底（见 forward 第 4 条）。
+    #    明文，在电信蜂窝上就是泄露给电信。改用 Domestic-DNS 兜底（见 forward 的两条兜底）。
     #    要切回 v5 的行为：把 forward 最后两条的 value 改回 Foreign-DNS 即可。
     # 6 个端点、三家机构。关键点有两个：
     #   ① IP 字面量 ⇒ 不需要 bootstrap（否则 dns.google 这个名字本身在国内就拿不到真 IP，
@@ -86,69 +86,44 @@ dns:
     - tls://8.8.8.8
     - tls://9.9.9.9
   forward:
-  # 1) .cn 整个 TLD 直接判国内。官方示例的第一条规则，不依赖远程规则集能否下载成功。
-  - domain_suffix:
-      match: "cn"
-      value: Domestic-DNS
-  # 2) 国内域名表 -> 国内 DNS。已全文核对（635 条有效规则：DOMAIN 23 /
-  #    DOMAIN-SUFFIX 587 / DOMAIN-KEYWORD 16 / IP-CIDR 5 / IP-CIDR6 4），
-  #    不含 dnsleaktest.com、dns.google、cloudflare-dns.com 等境外测试域名；
-  #    其中 9 条 IP-CIDR(6) 全部带 no-resolve，不会反过来强制一次预解析。
-  - proxy_rule_set:
-      match: https://github.com/ACL4SSR/ACL4SSR/raw/master/Clash/ChinaDomain.list
-      value: Domestic-DNS
-      update_interval: 86400
-  # 3) 机场节点域名 -> 国内 DNS（显式，有意为之）。
-  #    为什么必须写：本配置 6 个节点里 5 个用域名，这些名字必须在隧道建立“之前”
-  #    就解析出来，而且只能在直连条件下解析。原配置没有这一段，于是它们落到兜底的
-  #    境外组 —— 而代理侧解析是强制直连的，直连去问 8.8.8.8 在国内基本
-  #    不通，最终还是会掉回 bootstrap 明文（223.5.5.5）。写在第 3 条，是为了
-  #    把这条「注定要发生的国内解析」变成确定的、快的、不经明文的。
-  #    （真正想连节点域名都不暴露，只有一个办法：把节点写成 IP。本配置里
-  #      上面 Node-1 (IP) 就是 IP 形式，它不产生任何解析。）
-  - domain_suffix:
-      match: example-node.com        # ← 换成你的节点域名
-      value: Domestic-DNS
-  - domain_suffix:
-      match: example-node.net        # ← 换成你的节点域名
-      value: Domestic-DNS
-  - domain_suffix:
-      match: example-cdn.com         # ← 换成你的中转/CDN 域名
-      value: Domestic-DNS
-  # 3b) Egern 自己必须解析的名字（延迟测试端点 / 策略组图标）。
-  #     这些不是「用户要访问的网站」，而是 profile 自身运行所必需的解析，而且会被
-  #     反复触发 —— proxy_latency_test_url 在每次节点测速时都要解析一次（本文件多个
-  #     策略组带 interval，即每 10 分钟一轮，与你访问什么网站无关）。
-  #     实测这三个名字在 ChinaDomain.list 里 0 命中，原配置会把它们扔给兜底的境外组；
-  #     一旦这次解析落在直连侧（代理 DNS 强制直连 / 无代理可用），去问 8.8.8.8:443 就是
-  #     必然失败，然后走回退链，最后落到系统 DNS = 电信广州 219.128.x。
-  #     原则：必须在直连侧解析的名字，上游就得是「国内可达的加密 DNS」。
-  - domain:
-      match: cp.cloudflare.com
-      value: Domestic-DNS
-  - domain:
-      match: connectivitycheck.platform.hicloud.com
-      value: Domestic-DNS
-  #     策略组图标（fastly.jsdelivr.net）同理：Egern 自己要取。
-  - domain_suffix:
-      match: jsdelivr.net
-      value: Domestic-DNS
-  # 4) 双兜底：以上之外的一切 -> 国内加密 DNS（不是境外组）。★ v6 的唯一改动
-  #    为什么兜底必须是「不依赖代理」的组：
-  #      ① 文档只写了「未命中 Forward 回退 Bootstrap」，「命中组的端点全失败」会怎样
-  #         并没有写。一旦这条未写明的分支也回退 bootstrap，兜底挂在境外组就是一条
-  #         明文泄露通道 —— 而 bootstrap 在电信蜂窝上必然通向电信的解析器。
-  #      ② 兜底组若经代理，就引入隐式依赖「先有代理，才敢解析」。启动阶段（规则集与
-  #         geoip/asn DB 的下载、策略组首轮测速）代理尚未就绪，此时任何一次本地解析
-  #         都会掉进 bootstrap 明文 —— 你这轮看到的「upstream: bootstrap」就是这一类。
-  #      ③ 实际运行中，本地解析只服务于 DIRECT 域名：本配置的 DIRECT 规则集是
-  #         Lan.list / Apple_All_No_Resolve.list / ChinaMax_All_No_Resolve.list，全是国内与 Apple 域名（对他们
-  #         而言国内加密 DNS 本来就更优更快），外加 profile 自身依赖（上面 3)/3b) 已
-  #         显式接住）。走代理的域名由节点远程解析，根本不经过 dns 段 —— 所以把兜底
-  #         改成国内组，不影响任何需要「境外答案」的域名。
-  #    两条规则刻意语义不同、互不依赖：domain_regex 官方列为 PCRE2 find 式（命中任意
-  #    子串即算），'.' 必然命中任何域名；domain_wildcard 是官方示例与社区配置的主用法。
-  #    任何一条生效，bootstrap 都不会成为用户域名的回退。
+  # ============ Forward 规则（v10 起：塌缩为 2 条兜底，与订阅彻底解耦）============
+  # ★ v10 的唯一改动：删掉原第 1~8 条规则，只留最后两条兜底。
+  #   删掉的 8 条 = [1] domain_suffix: cn  [2] proxy_rule_set: ChinaDomain.list
+  #                 [3~5] 三个机场节点域名  [6~8] cp.cloudflare.com /
+  #                 connectivitycheck.platform.hicloud.com / jsdelivr.net
+  #
+  # 为什么可以删 —— 两个结构性事实（官方 dns 文档逐字支持）：
+  #   ① 「Forward 规则按声明顺序求值，第一条命中的决定上游」；而原 10 条规则的
+  #      value **全部都是 Domestic-DNS**（单值）。每条的结果都一样 ⇒ **顺序与域名
+  #      清单都不影响结果** ⇒ 删掉其中任何一条都不改变行为（可用 scripts/audit_dns_forward.py
+  #      验证：它会打印 value 集合并对任意域名做演练）。
+  #   ② 「配置了 proxy_nameservers 后，代理 DNS 会**跳过 Forward 阶段**，直接走该
+  #      列表」；而节点域名的解析走的正是代理 DNS ⇒ **它们本来就不会查询本节**。
+  #      所以原第 3~5 条（机场节点域名）自 v7 写出 proxy_nameservers 起就是死代码。
+  #   ⇒ 结论：换订阅、换机场、换节点域名、换中转 CDN，**本节都不需要改一个字**。
+  #      这也正是 Surge 那套配置的形态（一份加密 DNS 列表 + 全直连，不按域名分流 DNS）。
+  #
+  # 为什么兜底必须是 Domestic-DNS（而不是境外组）：
+  #   ① 官方只写了「未命中 Forward 回退 Bootstrap」，「命中的组端点全失败」会怎样
+  #      并未写明。兜底挂境外组，就等于把一条未定义的分支留给明文 UDP:53。
+  #   ② 兜底组若需经代理，就引入隐式依赖「先有代理，才敢解析」。启动阶段（规则集与
+  #      geoip/asn DB 下载、策略组首轮测速）代理尚未就绪，此时任何一次本地解析都会
+  #      掉进 bootstrap 明文 —— 电信蜂窝上就是泄露给电信。
+  #   ③ 实际运行中本地解析只服务于 DIRECT 域名。本配置 DIRECT 的域名来源是：
+  #        规则 0/1   alidns.com / doh.pub                 （国内）
+  #        规则 19    Lan.list                             （私网）
+  #        规则 41    Apple_All_No_Resolve.list            （Apple，国内有 CDN）
+  #        规则 43    xhscdn.com                           （国内）
+  #        规则 44    ChinaMax_All_No_Resolve.list         （国内 111,332 条域名）
+  #        规则 45    domain_suffix: cn                    （国内）
+  #      全是国内与 Apple 域名 —— 国内加密 DNS 对它们本来就更优更快。而走代理的域名
+  #      由节点远程解析（代理 DNS），根本不经过本节，所以不存在「需要境外答案」的域名。
+  #   ④ 兜底组 Domestic-DNS 的 6 个端点全部是 IP 字面量 ⇒ 自身不需要 bootstrap 解析；
+  #      且 223.5.5.5 / 223.6.6.6 / 1.12.12.12 / 120.53.53.53 在 rules 里判给 DIRECT
+  #      ⇒ **不依赖代理也永远活着**（启动阶段可用）。
+  #   两条兜底刻意用两种互不依赖的匹配语义（官方：domain_regex 是 PCRE2 find 式，
+  #   '.' 命中任意子串；domain_wildcard 是官方示例与社区配置的主用法）。任何一条生效，
+  #   bootstrap 都不会成为用户域名的回退。
   - domain_regex:
       match: '.'
       value: Domestic-DNS
@@ -299,7 +274,7 @@ policy_groups:
     - 🇯🇵 Node-4
     - 🇸🇬 Node-2
     flatten: false
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Rule/refs/heads/main/openai.png
+    icon: https://raw.githubusercontent.com/example-user/Rule/refs/heads/main/openai.png
     hidden: false
 - fallback:
     name: Gemini
@@ -308,21 +283,21 @@ policy_groups:
     - 🇯🇵 Node-4
     - 🇸🇬 Node-2
     flatten: false
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Rule/refs/heads/main/gemini-color.png
+    icon: https://raw.githubusercontent.com/example-user/Rule/refs/heads/main/gemini-color.png
     hidden: false
 - smart:
     name: Claude
     policies:
     - Taiwan
     flatten: false
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Rule/refs/heads/main/claude-color.png
+    icon: https://raw.githubusercontent.com/example-user/Rule/refs/heads/main/claude-color.png
     hidden: false
 - smart:
     name: AI
     policies:
     - Proxy
     flatten: false
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Rule/refs/heads/main/grok%20(1).png
+    icon: https://raw.githubusercontent.com/example-user/Rule/refs/heads/main/grok%20(1).png
     hidden: false
 - select:
     name: Spotify

@@ -77,8 +77,8 @@ python -c "import yaml;d=yaml.safe_load(open('Profile.yaml',encoding='utf-8'));p
 | # | 检查 | 判据 | 严重度 |
 |---|---|---|---|
 | 1 | `upstreams` / `proxy_nameservers` 的加密 DNS 是否 IP 字面量或已钉 hosts | 域名端点 → 必被 bootstrap 明文解析 | **境外域名=高**；国内域名=低 |
-| 2 | ⭐ **`proxies[].server` 是域名的节点，`forward` 里有没有显式规则接住它** | 没有 → 代理 DNS 强制直连、问不到境外解析器 → 回退明文 bootstrap（国内解析器）→ **节点域名明文暴露**。修法：为每个节点域名后缀加 `domain_suffix → 国内加密组`，或把节点改写成 IP | **高** |
-| 2b | `proxy_nameservers` 是否存在 | 它是**硬覆盖**：一设就绕过 `forward`、强制直连。**推荐"不设置 + forward 显式覆盖节点域名"**；只有在节点裸连不可用时才加回，且要清楚它成为代理侧唯一出口 | 中（设了要说明理由） |
+| 2 | ⭐ **`proxies[].server` 是域名的节点，它的解析走哪条路** | 节点域名走的是**代理 DNS**。v7 起 `proxy_nameservers` 已被显式设置 ⇒ 代理 DNS **跳过 `forward`**，只用那组 IP 字面量端点 ⇒ **不需要、也不应该**在 `forward` 里为节点域名写规则（那是死代码，见坑 18 / 清单 18）。判据从"forward 有没有接住"改成「**`proxy_nameservers` 是否显式设置、端点是否全为 IP 字面量**」 | **高** |
+| 2b | `proxy_nameservers` 是否存在 | **v7 起必须显式写。** 它是**硬覆盖**：一设就绕过 `forward`、强制直连。**"不写"才是问题** —— 官方语义「未配置时，代理 DNS 与默认 DNS 共用 Forward 规则，**未命中回退 Bootstrap**」，等于留下一条通往明文 UDP:53 的兜底分支。只能用**国内**端点（代理 DNS 强制直连，境外解析器在电信线路上不可达） | **高（缺失时）** |
 | 3 | ⭐ **DNS 端点是否有显式路由** | `geoip` 加了 `no_resolve` 就**不再匹配域名**；主机名形式的端点会落到 `default` → 国内端点被绕到境外出口 / 境外端点直连被阻断。**国内端点必须显式 → DIRECT，境外端点必须显式 → Proxy** | **高** |
 | 4 | ⭐ **`forward` 里是否存在「捕获一切」的兜底，且该兜底组「直连可达」** | 兜底存在的意义只有一个：让"未命中的域名"不回退 bootstrap 明文。**判据是"这组在代理没起来时能不能工作"，不是"它指国内还是境外"** —— 组内端点必须全是 IP 字面量，**且至少一个端点在 `rules` 里被判给 `DIRECT`**。只判给 Proxy 的组 = 依赖代理 = 启动期（规则集/DB 下载、首轮测速）会掉进 bootstrap 明文。**兜底指国内组才是对的**（见"铁律修正"）。**写法要认全**：`domain_wildcard: '*'` **和** `domain_regex: '.'`（官方 PCRE2 find 式，命中任意子串）都算兜底 —— 别只认前一种（审计器 v2 就误判过）。推荐**两条都写**（互不依赖的双保险），并让 `domain_wildcard` 放最后便于人/工具识别 | **高** |
 | 5 | `geoip` / `ip_cidr` / `ip_cidr6` / `asn` 是否带 `no_resolve` | 官方：`no_resolve` **仅适用这四类**；不加则规则会触发解析 | 高 |
@@ -91,9 +91,10 @@ python -c "import yaml;d=yaml.safe_load(open('Profile.yaml',encoding='utf-8'));p
 | 12 | `hijack_dns` 是否覆盖全部 | 官方 example 示例值即 `['*']`（= 接管 :53 并返回 Fake IP） | 高（缺失时） |
 | 13 | `public_ip_lookup_url` | **不配置**才不发 ECS（不把公网 IP 交给 DNS 服务器） | 配了才是问题 |
 | 14 | `skip_tls_verify` | 应为未设置 / `false` | 低 |
-| 15 | ⭐ **profile 自身必需解析的名字**（两个 latency test URL 的域名 + 策略组 `icon` 的域名）是否被"兜底之前"的 forward 规则接住 | 没接住 → 落兜底=境外组 → 一旦这次解析发生在直连侧（代理 DNS 强制直连 / 无代理可用），境外组不可达 → 回退 bootstrap 明文 → 再落 `system` = 运营商。**延迟测试端点 = 高**（每轮测速都触发，持续泄露）；**图标 = 低**（失败只是图标不显示；硬钉到国内解析器反而可能拿到污染/`0.0.0.0` 应答，收益<风险，可故意不动） | **高** |
+| 15 | ⭐ **profile 自身必需解析的名字**（两个 latency test URL 的域名 + 策略组 `icon` 的域名）是否被"兜底之前"的 forward 规则接住 | 没接住 → 落兜底=境外组 → 一旦这次解析发生在直连侧（代理 DNS 强制直连 / 无代理可用），境外组不可达 → 回退 bootstrap 明文 → 再落 `system` = 运营商。**延迟测试端点 = 高**（每轮测速都触发，持续泄露）；**图标 = 低**（失败只是图标不显示；硬钉到国内解析器反而可能拿到污染/`0.0.0.0` 应答，收益<风险，可故意不动） | **高**（前提：兜底组不安全；v6 起兜底已换成直连可达的国内组 ⇒ 落到兜底不再构成泄露，实际降级为 LOW，且 v10 起**连"单列规则"都不再需要** —— 见清单 18） |
 | 16 | ⭐⭐ **远程规则集里有没有"不带 `no-resolve` 的 IP 类条目"** | 这是**最隐蔽的一类**：缺陷不在 profile 里，而在别人仓库的 `.list` 文件里。官方 rules 文档：`no_resolve` 为 true 才"不触发 DNS 解析" ⇒ **不带就触发**。一条启用的 `rule_set` 规则里只要有**一条**这种条目，**每个走到该规则的域名都会被强制本地解析一次**。实测 `blackmatrix7/Surge/Apple/Apple_All.list` 有 13 条（139.178.128.0/18 等 Apple CDN 段）—— 这就是"规则判定 `default → Final → Proxy`、upstream 却是 `bootstrap`"的成因（坑 16）。**必须逐个下载 + 数**，用 `scripts/audit_ruleset_noresolve.py` | **高** |
 | 17 | ⭐⭐ **国内域名有没有"域名类"规则兜底**（不是"有没有一条叫 China 的规则"） | 给 IP 规则补 `no_resolve` 会**同时**关掉"靠解析判 IP 归属"这条直连路径。此时若没有一个**真正的域名规则集**接住国内域名，它们会整片落到 `default → Final → 代理`。判据：把规则集**下载下来数域名条目**（`DIRECT` 规则集域名条目 ≈ 0 就是这个坑），再用 `scripts/audit_routing_coverage.py` 拿真实域名走一遍。实测 `ChinaMax.list` 只有 64 条域名 / 12472 条 IP（仓库 README：它与 `ChinaMax_Domain.list` 需"共同使用"） | **高** |
+| 18 | ⭐ **`dns.forward` 的 `value` 是不是单值？有没有把节点域名写死？** | 若所有规则的 `value` 相同 ⇒ **顺序与域名清单都不影响结果** ⇒ 本节对"换订阅/换机场"天然免疫；反之新域名会落到兜底组，必须先确认兜底组安全。另：节点域名的解析走**代理 DNS**，配了 `proxy_nameservers` 后官方明确"**跳过 Forward**" ⇒ **写在 `forward` 里的节点域名规则是死代码**（坑 18）。用 `scripts/audit_dns_forward.py` 跑，含"换订阅演练"（合成未来节点域名） | **中**（可维护性/耦合面） |
 
 **关于 `no_resolve` 的三个层级，别混**：
 1. **规则级**（`rules:` 里 `- geoip: {match: CN, policy: DIRECT, no_resolve: true}`）—— 官方明说**只适用 `geoip`/`ip_cidr`/`ip_cidr6`/`asn` 四类**，写在 `rule_set` 规则上**不生效**。
@@ -130,41 +131,33 @@ dns:
                                   #    写 https://9.9.9.9/dns-query 会静默失效。
     # ⚠️⚠️ 本组**不要**用作 forward 的兜底 —— 它必须经代理才可达，把兜底挂在它身上等于
     #      「先有代理，才敢解析」，代理未就绪时那次解析会掉进 bootstrap 明文（见坑 13）。
-  forward:
-  - domain_suffix:                # ★ 官方示例第一条：.cn 整个 TLD 直接判国内
-      match: "cn"
-      value: Domestic-DNS
-  - proxy_rule_set:
-      match: <ChinaDomain 规则集 URL>   # Clash 格式可用（官方示例即用 Clash/ChinaDomain.list）
-      value: Domestic-DNS
-      update_interval: 86400
-  - domain_suffix:                # ★★ 节点 server 域名 → 国内加密组（见下 "必须先做的一步"）
-      match: <节点域名后缀 1>
-      value: Domestic-DNS
-  - domain_suffix:
-      match: <节点域名后缀 2>
-      value: Domestic-DNS
-  - domain:                       # ★★ profile 自身必需解析（清单 15）：延迟测试端点
-      match: cp.cloudflare.com    #    proxy_latency_test_url 的域名，每轮测速都触发
-      value: Domestic-DNS
-  - domain:
-      match: connectivitycheck.platform.hicloud.com   # direct_latency_test_url 的域名
-      value: Domestic-DNS
-  - domain_suffix:                # 策略组图标（fastly.jsdelivr.net 等）
-      match: jsdelivr.net
-      value: Domestic-DNS
+  forward:                        # ★★ v10 起只留兜底 —— **不要在这里写任何具体域名**（坑 18）
   - domain_regex:                 # ★★ 双保险之一：官方 PCRE2 find 式，'.' 必然命中任何域名
       match: '.'
       value: Domestic-DNS         # ★★ 兜底指向「直连可达」的国内加密组 —— 不是境外组。
   - domain_wildcard:              #    境外组必须经代理，代理没就绪时兜底就会掉进 bootstrap
       match: '*'                  #    明文（见坑 13）。按官方语义走代理的域名由节点远程解析，
       value: Domestic-DNS         #    本地 dns 段只服务 DIRECT 域名，所以国内组没有副作用。
-  # ★ 默认「不设置」proxy_nameservers —— 代理 DNS 就跟随上面的 forward，
-  #   节点域名已被显式接住，不会回退 bootstrap。
-  #   只有确认"节点裸连不可用"时才加回（它不是普通偏好，是硬覆盖）：
-  # proxy_nameservers:
-  # - 223.5.5.5
-  # - 119.29.29.29
+  # ★ 为什么不需要 `.cn` / 国内域名表 / 节点域名 / 延迟测试域名 / 图标域名这些规则：
+  #   ① 它们的 value 与兜底**完全相同** ⇒ 单值集合里"命中顺序"不产生任何影响，删掉也不变（清单 18）。
+  #      官方那句"第一条命中的决定上游"只在 value 有差异时才有意义。
+  #   ② 节点域名的解析走**代理 DNS**，配了 proxy_nameservers 后官方明确"**跳过 Forward**"
+  #      ⇒ 写在 forward 里的节点域名规则是**死代码**（v7 之前它有用，v7 之后退役）。
+  #   ③ 延迟测试域名与图标域名同理：v4 加它们是因为当时兜底是境外组（不安全）；
+  #      v6 把兜底换成国内组之后，它们就已被兜底覆盖。
+  #   ⚠️ 千万别为了"看起来严谨"再往这里堆域名 —— 每堆一条就把"换订阅"变成一次复查配置的义务。
+  # ★★ v7 起必须显式写 proxy_nameservers —— 不写就等于留下一条通往明文 UDP:53 的兜底分支：
+  #   官方原文：「未配置时，代理 DNS 与默认 DNS 共用 Forward 规则，**未命中回退到 Bootstrap**」；
+  #   配置后语义：「所有代理 DNS 查询强制走该列表，**Forward 规则会被跳过**」。
+  #   只能用国内端点 —— 代理 DNS **强制直连**，境外解析器在电信线路上不可达。
+  proxy_nameservers:
+  - https://223.5.5.5/dns-query
+  - https://223.6.6.6/dns-query
+  - https://1.12.12.12/dns-query
+  - https://120.53.53.53/dns-query
+  - tls://223.5.5.5
+  - tls://1.12.12.12
+  # ⚠️ 如果你发现"节点连不上"，第一件事是注释掉这 6 行（等价于回到 v6 的行为）。
   hosts:                          # ★ 把上面 DoH 域名钉到 IP（仅当 IP 固定）
     dns.alidns.com: [223.5.5.5, 223.6.6.6]
     doh.pub: [1.12.12.12, 120.53.53.53]
@@ -217,9 +210,14 @@ rules:
 
 顶层另加：`ipv6: false`、`hijack_dns: ['*']`、`real_ip_domains: ['*.lan','*.local','*.push.apple.com']`。
 
-⭐ **必须先做的一步（顺序不能反）**：先统计 `proxies[].server`，把**域名形式的节点**取出去重后缀，逐个写成 `domain_suffix → Domestic-DNS`，**然后再去调 `upstreams` 里的解析器**。理由：这些名字在隧道建立前必须被解析，而代理侧强制直连 —— 国内根本问不到境外解析器。**这是 v3 相对 v1/v2 的真正修复点，比换解析器重要得多。**
+⭐ **v10 起不要做这一步（它的反面才是对的）**：早期版本（v3）要求"把域名形式的节点逐个写成 `domain_suffix → Domestic-DNS`"，因为那时代理 DNS 会共用 `forward`。**v7 显式写出 `proxy_nameservers` 之后，代理 DNS 会跳过 `forward`** ⇒ 那些规则再也没被查询过（死代码，坑 18）。现在只需保证两件事：
 
-⭐ **同一条原则还要覆盖第二类名字：profile 自己运行必需的域名**（`proxy_latency_test_url` / `direct_latency_test_url` / 策略组 `icon`）。它们**不在任何国内域名表里**，一律落兜底=境外组，而每轮测速都在解析它们 —— 实测就是这一类造成了"持续泄露到中国电信"。**把这两类名字都接住，才叫把直连侧的解析收口。**
+1. `proxy_nameservers` **显式设置**，端点全部是**国内可达的 IP 字面量** —— 它是节点域名解析的唯一出口；
+2. `forward` **只留兜底**，且兜底组「直连可达」。
+
+⚠️ 顺序仍不能反：**先把解析路径收口（这两条），再去调 `upstreams` 里的解析器**。理由没变 —— 这些名字在隧道建立前必须被解析，而代理侧强制直连，国内根本问不到境外解析器。**但收口的手段是"把代理 DNS 钉死"，不是"在 forward 里列举域名"。**
+
+⭐ **同理，profile 自身运行必需的域名**（`proxy_latency_test_url` / `direct_latency_test_url` / 策略组 `icon`）**也不需要单列规则**：v6 起兜底已是国内加密组，它们天然被覆盖。它们只在**兜底是境外组的配置里**才会造成持续泄露 —— 那正是 v4 加它们的场景。用 `audit_dns_forward.py --drill` 可验证任何域名（含这两类）都落到安全的兜底。
 
 ## 判断 hosts 能不能钉
 
@@ -362,6 +360,19 @@ v7 改动：geoip:CN 补上 no_resolve: true（官方：不再触发解析）
 
 **配套新增脚本 `scripts/audit_routing_coverage.py`（清单 17）**：吃 profile，先统计每个启用的 `rule_set` 的域名/IP 构成，再拿一批探针域名按 rules 顺序走一遍，输出"命中规则 + 策略"。内置 15 个**不以 `.cn` 结尾**的国内探针（专门暴露"`.cn` 兜底掩盖了国内域名无覆盖"这种假象）+ 7 个境外探针（查是否被误判直连）。**动过 `no_resolve` 或换过规则集，必须复跑。** v7 实测 `7/15 落 Final`（完整复现用户现象），v8 `15/15 DIRECT`。
 
+**坑 18（v10 的教训）：不要把节点域名写进 DNS 分流规则 —— 它既没用，又让配置"看起来需要随订阅维护"。**
+
+用户的原话很准：「还要把节点的域名写在配置里配置对应的 dns 设置，过于复杂了 —— 这意味着我换了订阅，防 DNS 泄露就失效了」。核查后要说得更严厉一点：**那几条规则自 v7 起就是死代码。** 两条结构性事实（官方 dns 文档逐字支持）：
+
+1. **代理 DNS 不走 `forward`。** 官方：「配置了 `proxy_nameservers` 后，代理 DNS 会**跳过 Forward 阶段**，直接走该列表」。节点域名的解析走的正是代理 DNS ⇒ 写在 `forward` 里的节点域名规则**从未被查询过**。（v3 写它们时还没有 `proxy_nameservers`，当时确实需要；v7 补上之后它们就退役了，只是没人回头清理。）
+2. **当所有 forward 规则的 `value` 相同时，顺序与域名清单都不影响结果。** 官方说"第一条命中的决定上游"，但**单值集合里不存在"命中错"这回事** —— 加一条、删一条、写错一条，结果都一样。
+
+⇒ 正确做法不是"想办法动态生成节点域名规则"，而是**删掉它们**：`forward` 只留兜底，防泄露由**兜底组的安全性**（端点全为 IP 字面量 + 至少一个在 `rules` 里判给 `DIRECT`）承担，而不是由"记得去列举域名"承担。实测 v10：`forward` 10 条 → 2 条，`dns` 段与节点域名的耦合 4 → 0，四项审计逐项不变。
+
+⚠️ **更要提防它带来的错觉**：这些规则让配置**看起来**很严谨（"我专门照顾了节点域名"），实际既无功能，又把"换订阅"变成了一件需要复查配置的事。**判断一条规则该不该存在，只问两个问题：删掉它结果会变吗？它是否引入了维护耦合？**
+
+**配套新增脚本 `scripts/audit_dns_forward.py`（清单 18）**：打印 `forward` 的 value 集合与结构性冗余条数、统计"订阅耦合度"（从 `proxies[].server` 提取节点域名，查有几条 forward 规则把它们写死）、并支持 `--drill` 用**合成的"未来订阅"域名**做演练（默认 6 个故意不在任何规则集里的域名，验证"未命中的域名到底落到哪个上游"）。退出码 0/1，可直接接 CI。
+
 ## 定位"泄露到运营商"必须在网络侧实测，不能只看配置
 
 用户说"leak test 显示 china telecom / 联通"时，**第一个动作不是改配置，是把"运营商解析器"这条路径实测出来**。配置层能证明的只有"我声明的上游不会产生这个应答"，剩下的必须落到网络层。
@@ -406,6 +417,51 @@ nslookup -type=A whoami.akamai.net 192.168.2.168    # 若返回 198.18.x 说明�
 
 ⚠️ **`vif_only` 语义官方只有一句"仅虚拟网接口模式，默认 false"，无法确认细节。** 用户配置里若出现**非默认值**（`true`），只能当作 A/B 候选单独排除，**不要凭猜测替用户改**（常见于把机场模板当基线改的场景）。
 
+## 规则集到底有多重？（2026-09-19 实测，配 `scripts/weigh_ruleset.py`）
+
+用户问「3.42 MB 的规则集是不是负担太重 / 别的软件扛得住吗」时，**先纠正两个前提再谈数字**：
+
+1. **rule-set 不是 profile 的一部分**。profile 本体 ~34 KB，规则表是远程文件，只在启动/更新时下载一次并缓存，**不参与每次连接**。"配置太大"这个说法本身不成立。
+2. **大表不是用来治 DNS 泄露的**。治泄露是 `no_resolve` + 换掉带裸 IP 的规则集（坑 15/16）；大表（`ChinaMax_All_No_Resolve`）解决的是**分流**（坑 17）。两者不是一笔交易，别把成本记在泄露头上。
+
+### 实测（原生内核 mihomo v1.19.31 / Go，windows-amd64，稳态 RSS 中位数，3 次）
+
+| 加载内容 | 条目 | 文件 | 稳态 RSS | 增量 |
+|---|---|---|---|---|
+| 空配置基线 | — | — | 29.2 MB | — |
+| `ChinaMax_All_No_Resolve` | 111,332 域名 + 12,472 IP | 3.42 MB | 51.8 MB | **+22.6 MB** |
+| 同上、删掉 IP 条目 | 111,409 域名 | 2.97 MB | 47.7 MB | +18.5 MB |
+| `adrules_surge_domainset`（Cats-Team 广告表） | 199,781 | 4.36 MB | 53.8 MB | +24.7 MB |
+
+- ⭐ **可复用判据：原生实现每个域名条目 ≈ 130–175 B ⇒ 内存 ≈ `条目数 × 0.15 KB`。**（Python dict 实现实测 ~290 B/条，约为原生 2 倍。）
+- ⚠️ **别用"感觉"估**：本次先估"原生大概几 MB"，实测 +22.6 MB —— **差 5 倍**。要真数字就得起一个内核量（Windows 上可直接下载官方 release，用 `rule-providers: {type: file, behavior: classical, format: text}` 指向本地 `.list`，读进程 RSS）。
+- **加载时间无差别**：空配置就绪 356 ms vs 加载 3.42 MB 就绪 355 ms。
+- ⭐ **匹配成本与表规模基本无关**：单次查询 0.36–0.69 µs；表从 1,000 条涨到 111,332 条（111 倍），查询只从 0.36 µs → 0.69 µs（不到 2 倍，O(域名标签数)）。**所以大表不会拖慢任何连接，唯一代价是常驻内存。**
+
+### 大表几乎不能瘦身（别再花时间找"精简版"）
+
+| 检查 | 实测 |
+|---|---|
+| 去重 | 111,319 → 111,319，**零重复** |
+| 被更短父后缀覆盖的冗余 | **只有 4–5 条（0.004%）** |
+| 标签深度分布 | 两级 110,754 条、三级 396、四级以上 119 ⇒ **99.5% 已是最小可用粒度**，没有归并空间 |
+| 表内 IP 段 vs `geoip:CN` | 12,472 条中 7,622 条（61.1%）两端都在 CN；IPv4 面积 93.4% 落在 CN 内 ⇒ **那 12,472 条 IP 对本配置冗余**，但只值 4.1 MB / 13%，删了要自建托管，不划算 |
+
+### 换小表要按「覆盖率」判，绝不能按体积判
+
+| 判据 | `ChinaMax_All_No_Resolve`（111k） | `ChinaDomain.list`（ACL4SSR，586 条 / 17 KB） |
+|---|---|---|
+| 从大表随机抽 5,000 条长尾域名 | 100% | **0.4%** |
+| 26 个高频国内站点 | 25/26 | 21/26（漏 `deepseek.com` / `kimi.com` / `volces.com` / `didi.com`） |
+
+⇒ **覆盖是双峰的**：主流站点几百条就够，其余 99.5% 是长尾国内站。用小表 = 你随机撞到的国内小站（尤其视频/CDN 边缘）会被塞进境外代理。
+
+```bash
+"<venv>/Scripts/python.exe" scripts/weigh_ruleset.py <大表> --sub <小表> --probe www.jd.com --probe api.deepseek.com
+```
+
+**结论模板**：内存代价 20 MB 级（iPhone 上 0.5%，无感；RAM < 256 MB 的路由器要留意，叠加广告表后是 +45 MB 量级）；换来的是国内域名直连。**不值得为省这 20 MB 牺牲分流**；真正的大头往往是广告表（本项目里那份 199,781 条 / +24.7 MB 比 ChinaMax 还大，且更可控）。
+
 ## 改配置的安全姿势
 
 Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可达数千字符）。**不要用 YAML dump 重写整个文件**（会丢注释、改格式）。正确做法：
@@ -419,6 +475,19 @@ Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可�
 
 定位改动点的核心是 `find_one(pred, what)` —— 对每处改动断言「全文恰好命中 1 行」，命中 0 或 >1 行就中止。
 
+### 删除顶层键（实测：v9 删 `mitm` 段）
+
+用户说「HTTPS 解密暂时不用了 / 把 mitm 删掉」时，**先查依赖再删**：
+
+1. ⭐ **有没有规则依赖解密？** 只有 **`url_regex` / `header` / `user_agent` / `process_name`** 这四类需要 MITM 解密才能匹配；`domain*` / `ip_cidr` / `rule_set` / `geoip` 在 TLS 握手前就能判定。查法：
+   `sed -n '<rules 起始行>,$p' profile.yaml | grep -c 'url_regex\|header\|user_agent\|process_name'`
+   —— 零命中才可安全删（本项目实测零命中，零能力损失）。
+2. **删除范围不能按行数猜**：先定位 `^mitm:$`，再断言紧随的缩进行**恰好**是 `  ca_p12:` + `  ca_passphrase:` 两行，再断言第 4 行不是缩进（否则段内还有别的子键，按行数删会吃错）。`ca_p12` 是**单行 3674 字符**的超长行，只有一行，别当成多行 base64。
+3. **断言清单（七项）**：被删字段名与 base64 主体零残留 → 其余行逐条未变 → 顶层键数 = 原数 −1 且**差集恰好是 `{mitm}`** → 其余顶层键的值逐个相同 → `dns` / `rules` / `proxies` / `policy_groups` 解析后逐项相等 → YAML 可解析 → UTF-8 无 BOM / LF。
+4. **原位留一行中性注释**（**不含** `mitm` / `ca_p12` 等字样，如「此处原为 HTTPS 解密（个人证书）配置段，2026-09-19 按需删除；需要时从 vN 取回」）—— 便于日后恢复，又不会干扰敏感串扫描。
+5. **告知用户**：设备上已装的 CA 证书**不必删**（配置里不再解密，它不会被使用；真要清理去「设置 → 通用 → VPN与设备管理 → 配置描述文件」，但这与 DNS 泄露/分流无关）；**回滚 = 用上一版覆盖**，所以上一版必须保留。
+6. 删 `mitm` 后三项审计应**与上一版逐字相同**（DNS 面 / 规则集 / 分流）—— 不同就是误删，回去查第 2 步的断言。
+
 ## 核对器
 
 ```bash
@@ -427,21 +496,27 @@ Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可�
 "<venv>/Scripts/python.exe" scripts/audit_ruleset_noresolve.py profile.yaml  # ★★ 规则集 IP 条目 no-resolve 审计（清单 16）
 "<venv>/Scripts/python.exe" scripts/audit_ruleset_noresolve.py --url <ruleset-url>
 "<venv>/Scripts/python.exe" scripts/audit_routing_coverage.py profile.yaml   # ★★ 分流覆盖审计（清单 17，域名→命中规则→策略）
+"<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml --drill  # ★ forward 单值性/订阅耦合审计（清单 18）
 "<venv>/Scripts/python.exe" scripts/probe_doh.py                    # 只测 DoH 线格式
 "<venv>/Scripts/python.exe" scripts/profile_ruleset.py some.list    # 规则集类型分布
+"<venv>/Scripts/python.exe" scripts/weigh_ruleset.py some.list [--sub small.list] [--probe d]  # ★ 规则集"重量"：构成/冗余/深度/加载与匹配耗时/覆盖对比
 ```
 
 `check_egern_dns.py` 输出 `OK / LOW / HIGH` 三类，有 `HIGH` 时退出码 1，覆盖上面清单 1–15 项。
-清单 16 由 `audit_ruleset_noresolve.py` 单独覆盖（要下载 20 个规则集，几十秒，不塞进同一个脚本；有 `.ruleset-cache/` 本地缓存，加 `--offline` 可只读缓存）。实测判别力：**原始配置 → HIGH（`Apple_All.list` 13 条），v7 → OK（20 个规则集全过）**。
+清单 16 由 `audit_ruleset_noresolve.py` 单独覆盖（要下载**全部被引用的**规则集，几十秒，不塞进同一个脚本；有 `.ruleset-cache/` 本地缓存，加 `--offline` 可只读缓存）。实测判别力：**原始配置 → HIGH（`Apple_All.list` 13 条），v7 → OK（20 个全过）**。⚠️ 数量会随配置变化：v10 是 **19 个**（少的那 1 个 = `forward` 不再引用 `ChinaDomain.list`）—— 报数变少时先确认是"少引用"而不是"漏扫"。
 
 v3 起新增：① **节点域名覆盖检查**（从 `proxies[].server` 自动提取域名，逐个查 `forward` 是否有非兜底规则接住）；② **兜底语义识别**（`domain_wildcard:'*'` 与 `domain_regex:'.'` 都认，不再依赖"必须在最后一条"）。
-v4 起新增：③ ⭐ **「profile 自身必需解析」覆盖检查** —— 把两个 latency test URL 与 `policy_groups[].icon` 的域名按 `domain`/`domain_suffix`/`domain_keyword`/`domain_wildcard`/`domain_regex` 语义去匹配 `forward`，看有没有"兜底之前"的规则接住。**延迟测试端点漏接 = HIGH**（每轮测速都触发，持续泄露）；图标漏接 = LOW。
+⚠️ **①在 v7/v10 后已反转**：`proxy_nameservers` 一旦显式设置，代理 DNS 就跳过 `forward` ⇒ 该检查的判据改为"`proxy_nameservers` 是否显式设置且端点全为 IP 字面量"，而"forward 里有没有为节点域名单列规则"变成**要主动避免的事**（坑 18）。
+v4 起新增：③ ⭐ **「profile 自身必需解析」覆盖检查** —— 把两个 latency test URL 与 `policy_groups[].icon` 的域名按 `domain`/`domain_suffix`/`domain_keyword`/`domain_wildcard`/`domain_regex` 语义去匹配 `forward`，看有没有"兜底之前"的规则接住。**兜底组不安全时**：延迟测试端点漏接 = HIGH（每轮测速都触发，持续泄露）；图标漏接 = LOW。
+⚠️ **③在 v6 后降级**：兜底一旦换成直连可达的国内组，这些名字落到兜底就不再构成泄露（现为 LOW）—— 它们只在"兜底不安全"的配置里才是事故（坑 18）。
 v5 起新增：④ **明文回退面检查** —— `bootstrap` 含 `system` → HIGH（主动接进运营商 DNS）；`bootstrap` 只有 1 个 → LOW；`forward` 的 `value` 出现 `system` → HIGH、出现 `bootstrap` → LOW。
 v6 起（⭐ 本版最重要的收紧）：⑤ **兜底组「直连可达」判定（`group_reach()`）** —— 判据从"端点写 IP + 有显式路由"改为"**端点写 IP + 至少一个在 `rules` 里判给 `DIRECT`**"。只判给 Proxy 的组报 HIGH：**兜底组依赖代理**（坑 13）。这条判据是本次事故的直接产物 —— v5 在旧判据下 `0 high`，用户实测却出 `upstream: bootstrap`。同时**撤回 v2 的一条错判**："兜底指向国内组 = HIGH"是错的 —— 致命的是**明文**，"答案可能被污染"是另一个量级的问题；现在兜底 = 直连可达的国内组判 **OK + 一条 LOW 说明**。
 
 v7 起（本条不是脚本新增检查，而是**判据层面的补完**）：⑥ **清单 16 的规则集审计独立成脚本** —— 因为"强制解析"这类缺陷**完全不在 profile 文本里**，`check_egern_dns.py` 再怎么写也看不见。**这是本项目第二次栽在"审计器只能验证自己编码进去的假设"（坑 3、坑 9）上**：v6 在 `check_egern_dns.py` 下已是 `0 high`，用户实测仍有泄露。结论固化下来：**任何一次"审计通过但用户仍报泄露"，都必须假设"存在审计器看不见的维度"，并把该维度补成一个可复跑的脚本。**
 
 v8 起：⑦ **分流覆盖审计独立成脚本（清单 17）** —— 第三次栽在同一个道理上：v7 在 `check_egern_dns.py` / `audit_ruleset_noresolve.py` 下**双双通过**（`0 high` + `OK 20/20`），用户实测却是"国内域名全落 final"。原因是两个脚本一个只看 DNS 面、一个只看"会不会强制解析"，**都看不见路由本身对不对**。⇒ 新增 `audit_routing_coverage.py`。**结论再收紧一层：DNS 审计全绿 ≠ 配置可用；只要动过 `no_resolve` 或换过任何规则集，分流必须单独复测（可用域名走一遍规则）。**
+
+v10 起：⑧ **forward 单值性 / 订阅耦合审计独立成脚本（清单 18）** —— 这一次不是"泄露或分流坏了"，而是**可维护性**：用户指出"节点域名写在配置里，换订阅就失效"。核查发现那几条规则**自 v7 起已是死代码**（`proxy_nameservers` 让代理 DNS 跳过 forward；且全部 forward 规则 value 相同 ⇒ 顺序与域名清单都不影响结果）。⇒ `forward` 塌缩为 2 条兜底，新增 `audit_dns_forward.py`。**教训：审计器要同时盯"安全"和"耦合面" —— 一条没功能、却让人以为"配置依赖订阅"的规则，本身就是缺陷。**
 
 实测基准（同一份机场模板；v1→v7 三天内迭代。数字均为**当前判据**下、同一天复跑所得）：
 
@@ -455,10 +530,12 @@ v8 起：⑦ **分流覆盖审计独立成脚本（清单 17）** —— 第三�
 | v6 | 0 high / 2 low / 37 ok | **HIGH** ← 假安心 | 兜底已修，但 **`Apple_All.list` 的强制解析还在**；用户实测仍报 `upstream: bootstrap` |
 | **v7** | **0 high** / 3 low / 43 ok | **OK（20/20）** | — 但 **分流坏了**：国内域名 7/15 落 Final（该维度当时还没有脚本，见 v8） |
 | **v8** | **0 high** / 3 low / 43 ok | **OK（20/20）** | — （`ChinaMax.list` → `ChinaMax_All_No_Resolve.list`；分流 15/15 DIRECT、境外无误判） |
+| **v9** | **0 high** / 3 low / 43 ok | **OK（20/20）** | — （删顶层 `mitm` 段；与 v8 **三项审计逐字相同**，纯删除不动 DNS/分流） |
+| **v10** | **0 high** / 3 low / 43 ok | **OK（19/19）** | — （`forward` 10 条 → 2 条兜底，删掉 8 条结构性冗余；`dns` 与节点域名耦合 4 → 0。规则集数 20 → 19 是因为不再引用 `ChinaDomain.list`。四项审计中前三项与 v9 完全一致，`audit_dns_forward.py` 新增通过） |
 
 ⚠️ v1/v2/v3/v5 的 `0 high` **全是假安心**：v1/v2 靠加 `proxy_nameservers` 把 HIGH 压下去（代价是把泄露从偶发变成确定）；v3 是审计盲区（脚本没看 latency 域名）；**v5 是判据不足（"路由确定"被当成了"不依赖代理"）**；**v6 是审计维度缺失（只看 profile、不看它引用的规则集）**。**审计通过 ≠ 没有泄露 —— 必须回到机制层推导 + 按链路做实测（见"定位泄露到运营商"一节）。**
 
-### 加固结束的验收标准（六条同时满足才算完）
+### 加固结束的验收标准（七条同时满足才算完）
 
 1. `upstreams` 与 `proxy_nameservers` 里**没有任何主机名端点**（全部 IP 字面量，或已钉 `hosts`）—— 消灭 bootstrap 用途①。
 2. `forward` 有兜底，**且兜底组直连可达**（端点全为 IP 字面量 + 至少一个在 `rules` 里判给 `DIRECT`）—— 消灭 bootstrap 用途②，且不依赖"代理已就绪"。
@@ -468,6 +545,35 @@ v8 起：⑦ **分流覆盖审计独立成脚本（清单 17）** —— 第三�
    ⚠️ 前 4 条是"让它不被用到"；第 5 条只是把最坏分支的概率压小。**bootstrap 是明文 UDP:53，在运营商线路上无论指向哪个 IP 都可能被接管 —— 它唯一安全的形态是"永远不被触发"。**
 6. ⭐⭐ **分流仍然正确：国内域名仍判给 DIRECT。** 用 `audit_routing_coverage.py` 跑，15 个国内探针必须全 `DIRECT`。
    **这一条是第 3 条的代价，必须成对交付** —— 给 IP 规则补 `no_resolve` 会同时关掉"靠解析判 IP 归属"那条直连路径（坑 17）。所以补 `no_resolve` 的同一时刻，必须确认 `default` 之前有一份**含大量域名条目**的国内规则集（如 `ChinaMax_All_No_Resolve.list`）。**"DNS 审计全绿"不等于"配置可用"**：v7 时两个审计脚本双双通过，分流却整片是坏的。
+7. ⭐ **`dns.forward` 与订阅零耦合：`value` 单值，且没有任何一条规则把节点域名写死。** 用 `audit_dns_forward.py profile.yaml --drill` 跑，必须「零耦合 + 通过」。
+   **防泄露必须由"兜底组的安全性"承担，而不是由"记得去列举域名"承担** —— 后者会让换订阅变成一件需要复查配置的事，而它连功能都没有（坑 18）。
+
+## 公开模板仓库（本项目的对外交付物）
+
+自用配置已脱敏发布为公开模板 + 文档 + 本 skill：
+
+**https://github.com/RiverFlowsInUUU/egern-anti-dns-leak**
+
+```
+README.md                                   # 三条铁律 + 一图看懂回退链
+profiles/egern-anti-dns-leak.template.yaml  # 脱敏模板（无节点、无订阅、无证书）
+docs/01-DNS是怎么工作的.md                   # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
+docs/02-DNS为什么会泄露.md                   # 5 个真实案例（每个：现象→机制→修法）
+docs/03-加固清单-17项.md                     # 清单 + no_resolve 三层级 + 验收 6 条
+docs/04-模板逐段讲解.md                      # 逐段讲模板，含"必须替换的 4 处"
+docs/05-分流与no_resolve必须成对交付.md       # v7→v8 事故复盘
+docs/06-实测数据与版本谱系.md                 # 端点实测表 / 污染实测表 / v1→v8 谱系
+skill/                                       # 本 skill（含全部脚本）
+```
+
+**要更新模板时**：不要手改仓库里的 yaml。本地有 `outputs/_build_public_template.py`，
+它从 v8 自用版做**带断言的行级替换**并跑 38 个敏感串的零残留自检 —— 这是唯一正确的入口。
+发布用 `outputs/_publish_to_github.py`（Git Data API 单次提交；空仓库需先落初始化提交，
+否则 `POST /git/blobs` 报 `409 Git Repository is empty`）。方法论见 skill `github-publish-sanitized-repo`。
+
+**脱敏清单（这五类必须洗）**：节点 server/凭据/sni/reality 公钥 → 占位；
+机场订阅 URL（含 token）→ 占位；`mitm.ca_p12` + `ca_passphrase`（个人 CA 私钥）→ **注释掉**；
+机场组名/节点名 → `Airport-A` / `Node-1`；`dns.forward` 里的**节点域名** → `example-node.com`。
 
 ## 官方文档入口
 
