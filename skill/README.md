@@ -42,15 +42,23 @@ python "$S/check_egern_dns.py"            Profile.yaml          # 期望 0 high
 python "$S/audit_ruleset_noresolve.py"    Profile.yaml          # 期望 OK
 python "$S/audit_routing_coverage.py"     Profile.yaml          # 期望 15/15 DIRECT
 python "$S/audit_dns_forward.py"           Profile.yaml          # 期望 通过（forward 与订阅解耦）
+                                                                 # --drill 可选（加演练域名），不加也应通过
 python "$S/profile_ruleset.py"            ChinaMax.list         # 规则集类型分布
 python "$S/probe_dns_endpoints.py"        Profile.yaml          # 端点实测
+
+bash ./skill/tests/run.sh                                       # 回归测试（4 fixture × 2 脚本 = 8 断言）
 ```
 
 退出码 **0 = 通过**，可直接接进 CI 或提交前检查。
 规则集缓存写在系统临时目录（`%TEMP%\egern-ruleset-cache` / `/tmp/egern-ruleset-cache`），约 5 MB。
 
+> `tests/run.sh` 是**防退化守卫**：它把 `tests/` 下的 fixture 同时喂给 `check_egern_dns.py` 与
+> `audit_dns_forward.py`，确保两个脚本对同一份配置给出一致结论。CI：`.github/workflows/audit-regression.yml`。
+> 共享逻辑（`hostpart` / `ip_literal` / `DOMESTIC_RESOLVER_IPS`）集中在 `scripts/_egern_common.py`，
+> 避免"同一判据两份拷贝、改一处漏另一处"。两个脚本的运行目录里必须有这个文件。
+
 ## 三条必须记住的判据
 
-1. **兜底组的唯一判据是「直连可达」**（端点全为 IP 字面量 + 至少一个在 `rules` 里判给 `DIRECT`），**不是**「指向国内还是境外」。
+1. **兜底组的唯一判据是「直连可达」**（端点全为 IP 字面量，**且**至少一个在 `rules` 里判给 `DIRECT`、**或**至少一个是已知的国内解析器 IP），**不是**「指向国内还是境外」。
 2. **判据是「数域名条目」，不是看规则集名字，也不是看 README 标题。**
 3. **审计通过 ≠ 配置可用。** 本项目连续 5 次出现"脚本全绿、实测仍有问题" —— 每次都要假设"存在审计器看不见的维度"，并把它补成可复跑脚本。

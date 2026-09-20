@@ -23,10 +23,19 @@ Usage:
 
 Exit 0 = 无 HIGH 项，1 = 至少一条 HIGH。
 """
+import os
 import re
 import sys
 
 import yaml
+
+# ⭐ 共享工具：DOMESTIC_RESOLVER_IPS / hostpart / ip_literal 等收编在 _egern_common.py，
+#    与 audit_dns_forward.py 共用同一份实现 —— 不再有「两份拷贝靠注释同步」的隐患。
+#    （二次核查报告 P1：判据本体同步了、helper 没同步，两脚本会对同一配置给出相反结论。）
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _egern_common import (  # noqa: E402
+    DOMESTIC_RESOLVER_IPS, FOREIGN_DOH, hostpart as _common_hostpart, ip_literal,
+)
 
 IPV4 = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
 SCHEME = re.compile(r"^(?:udp|tls|https|quic|h3)://", re.I)
@@ -39,47 +48,15 @@ IP_RULE_TYPES = ("geoip", "ip_cidr", "ip_cidr6", "asn")
 BUILTIN = {"DIRECT", "REJECT", "PROXY"}
 # 只用真正稳定的国内后缀，别把 .xyz/.top 这类通用后缀当成"国内"
 DOMESTIC_SUFFIX = (".cn", ".com.cn", ".net.cn", ".org.cn", ".gov.cn")
-FOREIGN_DOH = {"8.8.8.8", "8.8.4.4", "1.1.1.1", "1.0.0.1", "9.9.9.9",
-               "208.67.222.222", "208.67.220.220", "8.8.8.8/dns-query"}
-# ⭐ 国内知名公共 DNS 解析器 IP（含 IPv4/IPv6）。用于「兜底组直连可达」的第二判据：
-#   在 profile 文本内无法证明任意 IP 是否可直连，但这些 IP 的归属与服务商是公开事实，
-#   且在国内任何链路上都直连可达 —— 与「在 rules 里判给 DIRECT」等价，且不需要
-#   配置里额外写装饰性规则。
-#   ⚠️ 只收「国内」解析器。FOREIGN_DOH 里的境外解析器**不在**此列：它们必须经代理
-#   才可达，一个全由境外 IP 组成的组即便端点全是 IP 字面量也**不能**判为直连可达。
-DOMESTIC_RESOLVER_IPS = {
-    # 阿里 AliDNS
-    "223.5.5.5", "223.6.6.6", "2400:3200::1", "2400:3200:baba::1",
-    # 腾讯 DNSPod
-    "119.29.29.29", "119.28.28.28", "2402:4e00::",
-    # DNSPod 备用 / 其他国内公共解析器
-    "182.254.116.116", "1.12.12.12", "120.53.53.53", "120.53.53.54",
-    # 114DNS
-    "114.114.114.114", "114.114.115.115",
-    # 百度
-    "180.76.76.76",
-    # 360
-    "101.226.4.6", "218.30.118.6", "123.125.81.6", "140.205.1.1",
-    # 中国电信 / 联通 / 移动 常见递归（非必须，仅作识别）
-    "1.2.4.8", "210.2.4.8",
-}
 
 
 def hostpart(server):
-    """'https://8.8.8.8/dns-query' -> '8.8.8.8'; 'tls://dns.google' -> 'dns.google'.
+    """'https://8.8.8.8/dns-query' -> '8.8.8.8'; '[2400:3200::1]' -> '2400:3200::1'.
 
-    坑：SCHEME 只列了 udp/tls/https/quic/h3，遇到 `http://...`（延迟测试 URL 就是这种）
-    不会剥离协议头，再按 ':' 切就会得到 'http' 这种假主机名。所以这里按 '://' 通用剥离，
-    不依赖 SCHEME 的白名单。
+    实现已收编到 _egern_common.hostpart（正确处理 IPv6 方括号、:port、任意 scheme）。
+    这里保留本名以便调用点不变。
     """
-    s = str(server).strip()
-    if "://" in s:
-        s = s.split("://", 1)[1]
-    s = SCHEME.sub("", s)
-    s = s.split("/")[0]
-    if s.startswith("["):
-        return s[1:s.index("]")]
-    return s.split(":")[0]
+    return _common_hostpart(server)
 
 
 def is_ip(h):

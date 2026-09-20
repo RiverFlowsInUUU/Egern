@@ -514,11 +514,19 @@ Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可�
 "<venv>/Scripts/python.exe" scripts/audit_ruleset_noresolve.py profile.yaml  # ★★ 规则集 IP 条目 no-resolve 审计（清单 16）
 "<venv>/Scripts/python.exe" scripts/audit_ruleset_noresolve.py --url <ruleset-url>
 "<venv>/Scripts/python.exe" scripts/audit_routing_coverage.py profile.yaml   # ★★ 分流覆盖审计（清单 17，域名→命中规则→策略）
-"<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml --drill  # ★ forward 单值性/订阅耦合审计（清单 18）
+"<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml         # ★ forward 单值性/订阅耦合审计（清单 18）
+"<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml --drill # ↑ --drill 可选：加合成"未来订阅"域名多演练一遍
 "<venv>/Scripts/python.exe" scripts/probe_doh.py                    # 只测 DoH 线格式
 "<venv>/Scripts/python.exe" scripts/profile_ruleset.py some.list    # 规则集类型分布
 "<venv>/Scripts/python.exe" scripts/weigh_ruleset.py some.list [--sub small.list] [--probe d]  # ★ 规则集"重量"：构成/冗余/深度/加载与匹配耗时/覆盖对比
+
+bash scripts/../tests/run.sh                                       # ★★ 回归测试：4 fixture × 2 脚本 = 8 断言，退出码非 0 即失败
 ```
+
+⚠️ **运行目录要求**：`check_egern_dns.py` 与 `audit_dns_forward.py` 会 import 同目录的
+`_egern_common.py`（共享工具）。**这三个文件必须在一起**，否则报 `ModuleNotFoundError`。
+`_egern_common.py` 收编了 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal` —— 从结构上消灭了
+"同一判据两份拷贝、改一处漏另一处"的隐患（详见"审计演进"节 v10.2）。
 
 `check_egern_dns.py` 输出 `OK / LOW / HIGH` 三类，有 `HIGH` 时退出码 1，覆盖上面清单 1–15 项。
 清单 16 由 `audit_ruleset_noresolve.py` 单独覆盖（要下载**全部被引用的**规则集，几十秒，不塞进同一个脚本；有 `.ruleset-cache/` 本地缓存，加 `--offline` 可只读缓存）。实测判别力：**原始配置 → HIGH（`Apple_All.list` 13 条），v7 → OK（20 个全过）**。⚠️ 数量会随配置变化：v10 是 **19 个**（少的那 1 个 = `forward` 不再引用 `ChinaDomain.list`）—— 报数变少时先确认是"少引用"而不是"漏扫"。
@@ -535,6 +543,30 @@ v7 起（本条不是脚本新增检查，而是**判据层面的补完**）：�
 v8 起：⑦ **分流覆盖审计独立成脚本（清单 17）** —— 第三次栽在同一个道理上：v7 在 `check_egern_dns.py` / `audit_ruleset_noresolve.py` 下**双双通过**（`0 high` + `OK 20/20`），用户实测却是"国内域名全落 final"。原因是两个脚本一个只看 DNS 面、一个只看"会不会强制解析"，**都看不见路由本身对不对**。⇒ 新增 `audit_routing_coverage.py`。**结论再收紧一层：DNS 审计全绿 ≠ 配置可用；只要动过 `no_resolve` 或换过任何规则集，分流必须单独复测（可用域名走一遍规则）。**
 
 v10 起：⑧ **forward 单值性 / 订阅耦合审计独立成脚本（清单 18）** —— 这一次不是"泄露或分流坏了"，而是**可维护性**：用户指出"节点域名写在配置里，换订阅就失效"。核查发现那几条规则**自 v7 起已是死代码**（`proxy_nameservers` 让代理 DNS 跳过 forward；且全部 forward 规则 value 相同 ⇒ 顺序与域名清单都不影响结果）。⇒ `forward` 塌缩为 2 条兜底，新增 `audit_dns_forward.py`。**教训：审计器要同时盯"安全"和"耦合面" —— 一条没功能、却让人以为"配置依赖订阅"的规则，本身就是缺陷。**
+
+v10.2 起（2026-09-20，二次核查报告触发）：⑩ **「靠注释提醒同步两份拷贝」被证明不可靠 —— 改成共享模块 + fixture 回归。**
+背景：上一条 v10.1 我在两个脚本里各写了一份同样的判据，并加了注释"改一处要同步另一处"。**注释没能阻止我漏改**：
+- 判据**本体**同步了，但**喂给判据的 helper 没同步** —— `audit_dns_forward.py` 自己的 `ep_ip()`
+  用 `rsplit(":", 1)[0]` 切端口，把 IPv6 的 `[2400:3200::1]` 截成 `'[2400:3200:'`；
+  而 `check_egern_dns.py` 的 `hostpart()` 有方括号专处理、返回正确值。
+  ⇒ **同一份 IPv6 profile，两个脚本给出相反结论**（0 high/exit 0 vs 需确认/exit 1）——
+  比"没有脚本"更糟，因为用户不知道信谁。
+- 同一时期还暴露：`audit_dns_forward.py` **不带 `--drill` 直接崩**（`UnboundLocalError: fails`）——
+  `fails = []` 只写在 `if probes:` 块里，而 README / docs / skill 里给的命令**正是不带参数的形态**。
+  这个崩溃**旧版就有**，但因为它只被手工喂给 `check_egern_dns.py`，一直没被发现。
+
+⇒ 固化四条：
+1. ⭐⭐ **共用逻辑必须收编成一个模块，不靠注释同步。** 现为 `scripts/_egern_common.py`，
+   收 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal` / `FOREIGN_DOH`；两个脚本都 import 它。
+   **判据可以有两处调用点，但实现只能有一处。**
+2. ⭐⭐ **fixture 必须喂给"所有"脚本，而不是常跑的那一个。** 新增 `scripts/../tests/run.sh`
+   （4 fixture × 2 脚本 = 8 断言）+ CI `.github/workflows/audit-regression.yml`。
+   经验：**"只差一点就能抓到"的 bug，恰恰是因为守卫只覆盖了一半**。加守卫时要问："这条断言有没有在
+   **每一个**消费方上跑过？"
+3. ⭐ **文档里给的命令必须逐条照着执行一遍。** 这次崩溃的命令就印在 README / docs/04 / skill/README 里。
+   文档里的命令是**接口契约**，改脚本后要回填验证（`--drill` 这类可选参数尤其要显式标注"可选"）。
+4. ⭐ **`_egern_common.py` 必须与调用它的脚本同目录。** 用户如果只拷走单个脚本会报 `ModuleNotFoundError`；
+   分发/打包时三个文件（`_egern_common.py` + 两个审计脚本）要一起走。
 
 v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随配置演进失效 —— 改配置后必须重跑判据，且改判据要用"双向回归"守住收紧面。**
 本次事故：v10 删掉了 15 条 DNS 端点路由规则（依据是 `upstreams` 全是 IP 字面量 ⇒ 不需要路由），**我验证了配置侧、没验证脚本侧** —— 而 `group_reach` 的判据有一半是「至少一个端点判给 `DIRECT`」。删掉那些规则 ⇒ 这半句永远不成立 ⇒ 插件把**自有模板**误判 `3 high`、退出码 1。报告结论准确。

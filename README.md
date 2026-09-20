@@ -76,17 +76,21 @@ forward:
 **结论**：启动期、节点域名解析、业务解析三条路径，都不再接触明文 `:53`。
 
 ### 审计读数
-本仓库附带的审计脚本可直接对本模板运行（`skill/scripts/`）：
+本仓库附带的审计脚本可直接对本模板运行（`skill/scripts/`），**四个脚本全绿**：
 
 | 脚本 | 本模板读数 |
 |---|---|
-| `audit_routing_coverage.py` | ✅ 15/15 国内探针 `DIRECT` |
-| `audit_dns_forward.py --drill` | ✅ 通过（退出码 0） |
 | `check_egern_dns.py` | ✅ 0 high（退出码 0）—— 另有 2 条 `LOW`（见下） |
+| `audit_ruleset_noresolve.py` | ✅ OK 19/19 规则集（IP 类条目全部带 `no-resolve`） |
+| `audit_routing_coverage.py` | ✅ 15/15 国内探针 `DIRECT` |
+| `audit_dns_forward.py` | ✅ 通过（退出码 0；`--drill` 可选，加不加都通过） |
 
 两条 `LOW` 都是**刻意为之、需你确认**的：① 设置了 `proxy_nameservers`（它会成为代理侧解析的唯一出口）；
 ② 兜底指向国内组（需要本地解析的境外域名会拿到国内答案，实际影响面仅限 DIRECT 域名）。
 **它们不是缺陷，是设计取舍。**
+
+**回归测试**：`bash skill/tests/run.sh` 把 4 个 fixture 同时喂给两个脚本（8 个断言），退出码非 0 即失败。
+CI 见 `.github/workflows/audit-regression.yml`。
 
 ---
 

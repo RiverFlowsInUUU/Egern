@@ -222,7 +222,14 @@ forward:
 - **没有放松防护**：v5 踩过的坑仍被拦住 —— **一个全由境外 IP 组成的组依然判 HIGH**
   （境外解析器必须经代理才可达）；含主机名端点的组依然判 HIGH。已用反例做过回归验证。
 - **四处同步**：`check_egern_dns.py` 的 `group_reach` + 其国内端点路由检查、
-  `audit_dns_forward.py` 的 `direct_ips` 收集 + 结论判定（同一判据的两份拷贝，必须同步改）。
+  `audit_dns_forward.py` 的 `direct_ips` 收集 + 结论判定。
+- ⭐ **（二次核查后）已消除「两份拷贝」隐患**：上述同步最初靠注释互相提醒，**被证明不可靠** ——
+  判据本体同步了、但喂给它的 helper（`ep_ip`）没同步，导致
+  `audit_dns_forward.py` 把 `[2400:3200::1]` 截断成 `'[2400:3200:'`，
+  **同一份 IPv6 profile 两个脚本给出相反结论**（0/1）。
+  现已把 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal` 收编到共享模块
+  `skill/scripts/_egern_common.py`，两个脚本都从它 import —— 从结构上消灭拷贝。
+  并新增 `skill/tests/run.sh`（4 fixture × 2 脚本）与 CI 守卫。
 
 > 📌 **诚实声明**：本项目最长的一条教训就是「审计通过 ≠ 配置可用」，反向同样成立 ——
 > **审计不通过 ≠ 配置不可用**。上面那次 3 high 就是判据的问题，配置本身（IP 字面量端点 + 单值兜底）

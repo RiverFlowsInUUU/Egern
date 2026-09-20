@@ -24,6 +24,7 @@
 import argparse
 import fnmatch
 import io
+import os
 import re
 import sys
 
@@ -31,6 +32,13 @@ try:
     import yaml
 except ImportError:
     sys.exit("需要 pyyaml：<venv>/Scripts/pip.exe install pyyaml")
+
+# ⭐ 共享工具：DOMESTIC_RESOLVER_IPS / hostpart / ip_literal 等收编在 _egern_common.py，
+#    与 check_egern_dns.py 共用同一份实现 —— 不再有「两份拷贝靠注释同步」的隐患。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _egern_common import DOMESTIC_RESOLVER_IPS, ip_literal, hostpart  # noqa: E402
+
+ep_ip = hostpart  # 本脚本历史调用名
 
 
 # 「换订阅演练」用的合成域名：模拟以后换机场/换中转会出现的节点域名形态。
@@ -43,58 +51,6 @@ DRILL_DOMAINS = [
     "edge.cdn-provider.top",
     "node-a.sub-new.example",
 ]
-
-# ⭐ v3.1：国内知名公共 DNS 解析器 IP。用于「兜底组直连可达」的第二判据。
-# 在 profile 文本内无法证明任意 IP 是否可直连，但这些 IP 的归属与服务商是公开事实，
-# 且在国内任何链路上都直连可达 —— 与「在 rules 里判给 DIRECT」等价，且不需要
-# 配置里额外写装饰性规则。
-# ⚠️ 只收「国内」解析器：境外解析器（8.8.8.8 等）必须经代理才可达，一个全由境外 IP
-# 组成的组即便端点全是 IP 字面量也**不能**判为直连可达（v5 的真实踩坑）。
-# 注意：本常量与 check_egern_dns.py 里的同名常量是同一判据的两份拷贝，改一处要同步另一处。
-DOMESTIC_RESOLVER_IPS = {
-    # 阿里 AliDNS
-    "223.5.5.5", "223.6.6.6", "2400:3200::1", "2400:3200:baba::1",
-    # 腾讯 DNSPod
-    "119.29.29.29", "119.28.28.28", "2402:4e00::",
-    # DNSPod 备用 / 其他国内公共解析器
-    "182.254.116.116", "1.12.12.12", "120.53.53.53", "120.53.53.54",
-    # 114DNS
-    "114.114.114.114", "114.114.115.115",
-    # 百度
-    "180.76.76.76",
-    # 360
-    "101.226.4.6", "218.30.118.6", "123.125.81.6", "140.205.1.1",
-    # 中国电信 / 联通 / 移动 常见递归（非必须，仅作识别）
-    "1.2.4.8", "210.2.4.8",
-}
-
-
-def ip_literal(ep):
-    """端点是不是 IP 字面量（不需要任何解析）。"""
-    s = str(ep).strip()
-    for pre in ("https://", "tls://", "quic://", "h3://", "udp://", "http://"):
-        if s.startswith(pre):
-            s = s[len(pre):]
-            break
-    host = s.split("/")[0]
-    # 去掉 :port（IPv6 带方括号的情况单独处理）
-    if host.startswith("["):
-        host = host[1:host.find("]")] if "]" in host else host
-    else:
-        host = host.rsplit(":", 1)[0] if host.count(":") == 1 else host
-    m = re.match(r"^\d{1,3}(\.\d{1,3}){3}$", host)
-    if m:
-        return True
-    return ":" in host  # IPv6 字面量
-
-
-def ep_ip(ep):
-    s = str(ep).strip()
-    for pre in ("https://", "tls://", "quic://", "h3://", "udp://", "http://"):
-        if s.startswith(pre):
-            s = s[len(pre):]
-            break
-    return s.split("/")[0].rsplit(":", 1)[0]
 
 
 def dom_suffix(h, m):
@@ -241,13 +197,15 @@ def main():
         print("  ℹ️ 存在耦合，但因为【二】是单值，这些规则删掉也不改变行为（它们只是文档）。")
 
     # ---------- 演练 ----------
+    # ⚠️ fails 必须在 if probes: 之外初始化 —— 否则不带 --drill / --domain 时
+    #    （probes 为空）不会进入该分支，下面结论段的 `not fails` 会抛 UnboundLocalError。
+    fails = []
     probes = list(a.domain) + (DRILL_DOMAINS if a.drill else [])
     if probes:
         print()
         print(f"【四】域名演练（{len(probes)} 个：你给的 + 合成『未来订阅』域名）")
         print("-" * 100)
         print(f"{'域名':36s} {'命中规则':34s} {'value':16s} 结论")
-        fails = []
         for h in probes:
             hit_i, hit_t, hit_v = None, "(未命中任何规则)", catch_value
             for i, (t, m, v, e) in enumerate(flat, 1):
