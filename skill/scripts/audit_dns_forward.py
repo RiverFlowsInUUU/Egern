@@ -44,6 +44,30 @@ DRILL_DOMAINS = [
     "node-a.sub-new.example",
 ]
 
+# ⭐ v3.1：国内知名公共 DNS 解析器 IP。用于「兜底组直连可达」的第二判据。
+# 在 profile 文本内无法证明任意 IP 是否可直连，但这些 IP 的归属与服务商是公开事实，
+# 且在国内任何链路上都直连可达 —— 与「在 rules 里判给 DIRECT」等价，且不需要
+# 配置里额外写装饰性规则。
+# ⚠️ 只收「国内」解析器：境外解析器（8.8.8.8 等）必须经代理才可达，一个全由境外 IP
+# 组成的组即便端点全是 IP 字面量也**不能**判为直连可达（v5 的真实踩坑）。
+# 注意：本常量与 check_egern_dns.py 里的同名常量是同一判据的两份拷贝，改一处要同步另一处。
+DOMESTIC_RESOLVER_IPS = {
+    # 阿里 AliDNS
+    "223.5.5.5", "223.6.6.6", "2400:3200::1", "2400:3200:baba::1",
+    # 腾讯 DNSPod
+    "119.29.29.29", "119.28.28.28", "2402:4e00::",
+    # DNSPod 备用 / 其他国内公共解析器
+    "182.254.116.116", "1.12.12.12", "120.53.53.53", "120.53.53.54",
+    # 114DNS
+    "114.114.114.114", "114.114.115.115",
+    # 百度
+    "180.76.76.76",
+    # 360
+    "101.226.4.6", "218.30.118.6", "123.125.81.6", "140.205.1.1",
+    # 中国电信 / 联通 / 移动 常见递归（非必须，仅作识别）
+    "1.2.4.8", "210.2.4.8",
+}
+
 
 def ip_literal(ep):
     """端点是不是 IP 字面量（不需要任何解析）。"""
@@ -268,10 +292,18 @@ def main():
                 direct_ips.add(str(body.get("match")).split("/")[0])
     routed_direct = sorted({ep_ip(e) for e in eps} & direct_ips)
     print(f"  rules 中判给 DIRECT 的端点: {routed_direct if routed_direct else '（无）'}")
+    # ⭐ v3.1：第二判据 —— 端点本身是国内知名解析器 IP 时，国内链路直连可达，
+    # 无需在 rules 里写装饰性 DIRECT 规则（与 check_egern_dns.py 的 group_reach 判据 B 一致）。
+    known_domestic = sorted({ep_ip(e) for e in eps} & DOMESTIC_RESOLVER_IPS)
+    reachable = bool(routed_direct or known_domestic)
     if routed_direct:
         print("  ✅ 该组不依赖代理也永远活着（启动阶段代理未就绪时也能解析）。")
+    elif known_domestic:
+        print(f"  ✅ 端点 {known_domestic} 是国内知名解析器 IP ⇒ 国内链路直连可达，"
+              f"无需 rules 里的 DIRECT 路由；该组同样不依赖代理。")
     else:
-        print("  ⚠️ 该组没有任何端点在 rules 里判给 DIRECT ⇒ 需要确认它是否要经代理才能到达。")
+        print("  ⚠️ 该组端点既不在 rules 里判给 DIRECT、也不是已知的国内解析器 "
+              "⇒ 无法证明它不经代理即可到达。")
 
     print()
     print("  proxy_nameservers:", "已配置" if pns else "未配置（代理 DNS 会共用 forward 并回退 bootstrap）")
@@ -290,13 +322,14 @@ def main():
     # ---------- 结论 ----------
     print()
     print("=" * 100)
-    ok = single and catch_value is not None and not bad_ep and routed_direct and pns and not pns_bad \
+    ok = single and catch_value is not None and not bad_ep and reachable and pns and not pns_bad \
         and not any(str(b).strip() == "system" for b in boot) and not fails
     if ok:
         print("结论：✅ 通过")
         print("  任意域名（含以后换订阅新增的节点域名）在 forward 里都会得到同一个结果 "
               f"({catch_value})，")
-        print("  而该组端点为 IP 字面量、在 rules 中被判 DIRECT、不依赖代理 ⇒ 不会掉进明文 bootstrap。")
+        why = "在 rules 中被判 DIRECT" if routed_direct else f"是国内知名解析器（{known_domestic}）"
+        print(f"  而该组端点为 IP 字面量、{why}、不依赖代理 ⇒ 不会掉进明文 bootstrap。")
         print("  ⇒ 换订阅/换机场**不需要修改 dns 段**。")
     else:
         print("结论：⚠️ 有需要确认的项")
@@ -307,8 +340,8 @@ def main():
             reasons.append("没有兜底规则 ⇒ 未命中的域名回退 Bootstrap（明文 UDP:53）")
         if bad_ep:
             reasons.append(f"兜底组含主机名端点 {bad_ep} ⇒ 触发 bootstrap 明文解析")
-        if not routed_direct:
-            reasons.append("兜底组没有端点在 rules 里判 DIRECT ⇒ 可能依赖代理")
+        if not reachable:
+            reasons.append("兜底组端点既无 rules 里的 DIRECT 路由、也不是已知国内解析器 ⇒ 可能依赖代理")
         if not pns:
             reasons.append("未配置 proxy_nameservers ⇒ 代理 DNS 会共用 forward 并回退 bootstrap")
         if fails:

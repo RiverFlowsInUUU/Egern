@@ -41,6 +41,28 @@ BUILTIN = {"DIRECT", "REJECT", "PROXY"}
 DOMESTIC_SUFFIX = (".cn", ".com.cn", ".net.cn", ".org.cn", ".gov.cn")
 FOREIGN_DOH = {"8.8.8.8", "8.8.4.4", "1.1.1.1", "1.0.0.1", "9.9.9.9",
                "208.67.222.222", "208.67.220.220", "8.8.8.8/dns-query"}
+# ⭐ 国内知名公共 DNS 解析器 IP（含 IPv4/IPv6）。用于「兜底组直连可达」的第二判据：
+#   在 profile 文本内无法证明任意 IP 是否可直连，但这些 IP 的归属与服务商是公开事实，
+#   且在国内任何链路上都直连可达 —— 与「在 rules 里判给 DIRECT」等价，且不需要
+#   配置里额外写装饰性规则。
+#   ⚠️ 只收「国内」解析器。FOREIGN_DOH 里的境外解析器**不在**此列：它们必须经代理
+#   才可达，一个全由境外 IP 组成的组即便端点全是 IP 字面量也**不能**判为直连可达。
+DOMESTIC_RESOLVER_IPS = {
+    # 阿里 AliDNS
+    "223.5.5.5", "223.6.6.6", "2400:3200::1", "2400:3200:baba::1",
+    # 腾讯 DNSPod
+    "119.29.29.29", "119.28.28.28", "2402:4e00::",
+    # DNSPod 备用 / 其他国内公共解析器
+    "182.254.116.116", "1.12.12.12", "120.53.53.53", "120.53.53.54",
+    # 114DNS
+    "114.114.114.114", "114.114.115.115",
+    # 百度
+    "180.76.76.76",
+    # 360
+    "101.226.4.6", "218.30.118.6", "123.125.81.6", "140.205.1.1",
+    # 中国电信 / 联通 / 移动 常见递归（非必须，仅作识别）
+    "1.2.4.8", "210.2.4.8",
+}
 
 
 def hostpart(server):
@@ -255,9 +277,20 @@ def audit(path):
     def group_reach(grp):
         """(可达性, 原因码, 说明)
 
-        True  = 不依赖代理也活得下来（端点全为 IP 字面量，且至少一个在 rules 里判给 DIRECT）
+        True  = 不依赖代理也活得下来。判据（二者满足其一即可）：
+                 A. 至少一个端点 IP 在 rules 里判给 DIRECT（显式路由证据）；
+                 B. 端点全为 IP 字面量，且**至少一个是国内知名解析器 IP**
+                    （DOMESTIC_RESOLVER_IPS —— 其国内直连可达性是公开事实）。
         False = 需要 bootstrap 明文（'hostname'）或必须经代理才可达（'proxy_only'）
         None  = 组不存在或为空（'missing'）
+
+        ⭐ 判据 B 是 v3.1 新增。起因：v10 把 DNS 端点路由规则整段删掉后（依据是
+        「端点全是 IP 字面量 ⇒ 不需要在 rules 里钉路由」，见 docs/04 §5 段 A），
+        只有判据 A 会让这类配置**永远**判负 —— 判据与设计意图互相排斥。
+        但也不能退回「端点全为 IP 即判可达」：那会放行一个**全由境外 IP 组成**的组
+        （v5 的真实踩坑：兜底挂在必须经代理的境外组上，审计 OK、实测泄露）。
+        所以用「国内知名解析器 IP」这个在 profile 文本内可验证、且语义等价于
+        「直连可达」的证据，替代 ip_cidr 装饰性规则。
         """
         servers = upstreams.get(grp) or []
         if not servers:
@@ -269,7 +302,16 @@ def audit(path):
         direct = sorted(ip for ip, p in pols.items() if str(p or "").upper() == "DIRECT")
         if direct:
             return True, "ok", f"{len(pols)} 个端点全为 IP，其中 {direct} 判给 DIRECT"
-        return False, "proxy_only", f"端点全为 IP，但无一在 rules 里判给 DIRECT（当前 {pols}）"
+        known = sorted(ip for ip in pols if ip in DOMESTIC_RESOLVER_IPS)
+        if known:
+            return True, "ok_domestic_resolver", (
+                f"{len(pols)} 个端点全为 IP，其中 {known} 是国内知名解析器"
+                f"（国内链路直连可达，无需 rules 里的 DIRECT 路由）"
+            )
+        return False, "proxy_only", (
+            f"端点全为 IP，但无一在 rules 里判给 DIRECT，也都不是已知的国内解析器"
+            f"（当前 {pols}）-> 无法证明它不经代理即可到达"
+        )
 
     # ---- 3. forward 必须有"捕获一切"的兜底，且兜底组必须直连可达 ----------
     if not forward:
@@ -392,6 +434,12 @@ def audit(path):
             want = "Proxy" if foreign else "DIRECT"
             if hits:
                 ok.append(f"端点 {h} 有显式路由 {hits[0]}（期望 {want}）")
+            elif not foreign and is_ip(h) and h in DOMESTIC_RESOLVER_IPS:
+                # ⭐ v3.1：端点本身是国内知名解析器 IP —— 它不经代理即可直达，
+                # 不需要在 rules 里再钉一条装饰性 DIRECT 规则（与 group_reach 判据 B 一致）。
+                ok.append(
+                    f"端点 {h} 是国内知名解析器 IP，国内链路直连可达，无需显式 DIRECT 路由"
+                )
             else:
                 # 是否靠 default 兜住？那对国内端点就是错的
                 dr = [r for r in enabled if rule_type(r) == "default"]

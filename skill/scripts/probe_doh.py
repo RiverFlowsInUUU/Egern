@@ -36,9 +36,16 @@ def parse_answers(buf):
 HOSTS = ['doh.18bit.cn', 'dns.alidns.com', 'doh.pub', 'dns.google', '1.1.1.1', '8.8.8.8']
 NAMES = ['example.com', 'www.google.com', 'www.baidu.com']
 
+# 证书校验：默认**开启**（与 probe_dns_endpoints.py 一致）。
+# 曾因为这里写死 CERT_NONE + check_hostname=False，本脚本无法发现「证书不覆盖该 IP」
+# 这类问题 —— 而 DoH 端点用 IP 字面量时，证书是否覆盖该 IP 正是要验证的东西之一。
+# 用法：--no-verify 可关闭（仅在证书链本身有问题、你只想看协议能否通时使用）。
+NO_VERIFY = '--no-verify' in sys.argv
 ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+if NO_VERIFY:
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    print('⚠️  证书校验已关闭（--no-verify）：下面的结果无法反映证书问题。\n')
 
 for h in HOSTS:
     print('=' * 78)

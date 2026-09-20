@@ -559,7 +559,7 @@ README.md                                   # 三条铁律 + 一图看懂回退�
 profiles/egern-anti-dns-leak.template.yaml  # 脱敏模板（无节点、无订阅、无证书）
 docs/01-DNS是怎么工作的.md                   # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
 docs/02-DNS为什么会泄露.md                   # 5 个真实案例（每个：现象→机制→修法）
-docs/03-加固清单-17项.md                     # 清单 + no_resolve 三层级 + 验收 6 条
+docs/03-加固清单-18项.md                     # 清单 + no_resolve 三层级 + 验收 6 条
 docs/04-模板逐段讲解.md                      # 逐段讲模板，含"必须替换的 4 处"
 docs/05-分流与no_resolve必须成对交付.md       # v7→v8 事故复盘
 docs/06-实测数据与版本谱系.md                 # 端点实测表 / 污染实测表 / v1→v8 谱系
