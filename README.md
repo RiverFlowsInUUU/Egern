@@ -85,6 +85,7 @@ forward:
 3. 按需增删 `rules` 引用的规则集。
 
 需要逐段深挖或跑审计，见 [`docs/`](docs/) 与 [`skill/`](skill/)。
+被本文省略的全部细节——逐段框架、原理推导、v1–v10 版本谱系、18 项审计清单、规则集开销实测、已知取舍，以及配套 Skill 的方法论——集中于 [`DetailsReadme/`](DetailsReadme/)。
 
 ---
 
