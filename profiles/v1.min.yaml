@@ -1,4 +1,3 @@
-ipv6: false
 vif_only: true
 hijack_dns:
 - '*'
@@ -6,9 +5,6 @@ geoip_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Count
 asn_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/GeoLite2-ASN.mmdb
 proxy_latency_test_url: http://cp.cloudflare.com/generate_204
 direct_latency_test_url: http://connectivitycheck.platform.hicloud.com/generate_204
-compat_route: false
-include_all_networks: false
-include_apns: false
 real_ip_domains:
 - '*.lan'
 - '*.local'
@@ -67,79 +63,61 @@ policy_groups:
     - Japan
     - Korea
     - Other Regions
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Proxy.png
-    hidden: false
 - smart:
     name: Smart
     policies:
     - Airport-Free
     - Airport-C
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Auto.png
-    hidden: false
 - fallback:
     name: ChatGPT
     policies: []
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
-    hidden: false
 - fallback:
     name: Gemini
     policies: []
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/gemini-color.png
-    hidden: false
 - smart:
     name: Claude
     policies:
     - Taiwan
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/claude-color.png
-    hidden: false
 - smart:
     name: AI
     policies:
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/grok.png
-    hidden: false
 - select:
     name: Spotify
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Spotify.png
-    hidden: false
 - select:
     name: YouTubeMusic
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/YouTubeMusic.png
-    hidden: false
 - select:
     name: YouTube
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/YouTube.png
-    hidden: false
 - select:
     name: GitHub
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/GitHub.png
-    hidden: false
 - select:
     name: Google
     policies:
     - Gemini
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Google.png
-    hidden: false
 - select:
     name: Microsoft
     policies:
@@ -153,14 +131,12 @@ policy_groups:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Telegram.png
-    hidden: false
 - select:
     name: Twitter
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Twitter.png
-    hidden: false
 - external:
     name: Airport-A
     type: smart
@@ -168,7 +144,6 @@ policy_groups:
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
 - external:
     name: Airport-B
     type: smart
@@ -178,37 +153,30 @@ policy_groups:
     urls_disabled:
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
 - external:
     name: Airport-C
     type: smart
     urls:
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
 - smart:
     name: Airport-Free
     policies: []
-    flatten: false
     urls:
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
 - select:
     name: WeChat
     policies:
     - DIRECT
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/WeChat.png
-    hidden: false
 - select:
     name: AD
     policies:
     - REJECT
     - DIRECT
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/AdBlock.png
-    hidden: false
 - smart:
     name: Hong Kong
     policies:
@@ -217,7 +185,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇭🇰|香港|Hong\s*Kong|\bHKG?\b|(?:深|沪|京|广)港
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/HongKong.png
-    hidden: false
 - smart:
     name: USA
     policies:
@@ -226,7 +193,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇺🇸|美国|United\s*States|America|\bUSA?\b|洛杉矶|硅谷|西雅图|芝加哥|达拉斯|凤凰城|阿什本|纽约|迈阿密|波士顿|休斯顿|亚特兰大|拉斯维加斯|圣地亚哥|盐湖城|奥斯汀|波特兰|丹佛|奥克兰|安大略|圣安娜|\b(?:LAX|SJC|SFO|SEA|ORD|JFK|DFW|IAD|PHX|ATL|BOS|MIA|EWR|LGA|IAH|HOU|DEN|OAK|ONT|SNA|LAS|PDX|DAL|SAN|SLC|MSP)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/UnitedStates.png
-    hidden: false
 - smart:
     name: Japan
     policies:
@@ -236,7 +202,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇯🇵|日本|东京|大阪|Japan|\b(?:JPN?|NRT|HND|KIX|FUK|NGO|OSA|CTS|SDJ|OKA)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Japan.png
-    hidden: false
 - smart:
     name: Taiwan
     policies:
@@ -245,7 +210,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇹🇼|台湾|Taiwan|\b(?:TWN?|TPE|Taipei)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Taiwan.png
-    hidden: false
 - smart:
     name: Singapore
     policies:
@@ -254,7 +218,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇸🇬|新加坡|狮城|Singapore|\b(?:SGP?|SIN)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Singapore.png
-    hidden: false
 - smart:
     name: Korea
     policies:
@@ -264,7 +227,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇰🇷|韩国|首尔|仁川|Korea|South\s*Korea|\b(?:KOR|KR|ICN|SEL)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Korea.png
-    hidden: false
 - smart:
     name: Other Regions
     policies:
@@ -284,7 +246,6 @@ policy_groups:
         倍率|剩余|到期|流量|官网|订阅|测试|有效|禁止|邮箱|客服|地址|网站|群组
       ) ) .+ $
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/WorldMap.png
-    hidden: false
 - smart:
     name: MAX
     policies:
@@ -298,56 +259,44 @@ policy_groups:
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Nfcloud.png
-    hidden: false
 - select:
     name: Final
     policies:
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Final.png
-    hidden: false
 rules:
 - rule_set:
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
     policy: AD
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
     policy: AD
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     name: ChatGPT
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/OpenAI/OpenAI.list
     policy: ChatGPT
-    disabled: false
 - rule_set:
     name: Gemini
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Gemini/Gemini.list
     policy: Gemini
-    disabled: false
 - rule_set:
     name: Anthropic
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Anthropic/Anthropic.list
     policy: Claude
-    disabled: false
 - rule_set:
     name: Claude
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Claude/Claude.list
     policy: Claude
-    disabled: false
 - rule_set:
     name: AI
     match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
     policy: AI
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Spotify/Spotify.list
     policy: Spotify
@@ -379,7 +328,6 @@ rules:
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Apple/Apple_All_No_Resolve.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/WeChat/WeChat.list
     policy: WeChat

@@ -1,4 +1,3 @@
-ipv6: false
 vif_only: true
 hijack_dns:
 - '*'
@@ -6,9 +5,6 @@ geoip_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Count
 asn_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/GeoLite2-ASN.mmdb
 proxy_latency_test_url: http://cp.cloudflare.com/generate_204
 direct_latency_test_url: http://connectivitycheck.platform.hicloud.com/generate_204
-compat_route: false
-include_all_networks: false
-include_apns: false
 real_ip_domains:
 - '*.lan'
 - '*.local'
@@ -40,53 +36,40 @@ policy_groups:
 - select:
     name: Proxy
     policies: []
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Proxy.png
-    hidden: false
 - smart:
     name: AI
     policies:
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
-    hidden: false
 - select:
     name: AD
     policies:
     - REJECT
     - DIRECT
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/AdBlock.png
-    hidden: false
 - select:
     name: Final
     policies:
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Final.png
-    hidden: false
 rules:
 - rule_set:
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
     policy: AD
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
     policy: AD
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     name: AI
     match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
     policy: AI
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/direct.txt
     policy: DIRECT
