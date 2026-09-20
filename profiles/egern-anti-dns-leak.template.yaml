@@ -490,53 +490,13 @@ rules:
     no_resolve: true
 # ---- 以下为原有规则，顺序保持不变 ------------------------------------------
 - rule_set:
-    name: Cat-Teams
-    match: https://raw.githubusercontent.com/Cats-Team/AdRules/main/adrules_surge_domainset.txt
-    policy: AD
-    disabled: true
-- rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
     policy: AD
     disabled: false
 - rule_set:
-    name: 抓取
-    match: 抓取
-    policy: AD
-    disabled: true
-- domain_keyword:
-    name: NoteGPT
-    match: notegpt
-    policy: 负载均衡
-    disabled: true
-- rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
     disabled: false
-- ip_cidr:
-    match: 8.8.8.8/32
-    policy: Proxy
-    no_resolve: true
-    disabled: true
-- ip_cidr:
-    match: 8.8.4.4/32
-    policy: Proxy
-    no_resolve: true
-    disabled: true
-- ip_cidr:
-    match: 1.1.1.1/32
-    policy: Proxy
-    no_resolve: true
-    disabled: true
-- ip_cidr:
-    match: 1.0.0.1/32
-    policy: Proxy
-    no_resolve: true
-    disabled: true
-- rule_set:
-    name: Push
-    match: Apple push
-    policy: Proxy
-    disabled: true
 - rule_set:
     name: ChatGPT
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/OpenAI/OpenAI.list
@@ -589,14 +549,6 @@ rules:
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Proxy/Proxy.list
     policy: Proxy
-- ip_cidr:
-    match: 223.5.5.5/32
-    policy: DIRECT
-    disabled: true
-- ip_cidr:
-    match: 119.29.29.29/32
-    policy: DIRECT
-    disabled: true
 # ★ v7 核心改动：Apple_All.list -> Apple_All_No_Resolve.list
 #   官方 rules 文档原文：「no_resolve (bool)……设为 true 时仅匹配已解析的 IP 地址，
 #   **不会触发 DNS 解析**」—— 反过来说，不带 no_resolve 的 IP 类条目**会触发解析**。
