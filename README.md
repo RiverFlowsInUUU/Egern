@@ -16,8 +16,9 @@
   <a href="#-文件结构">文件结构</a> •
   <a href="#-三个版本">三个版本</a> •
   <a href="#-防泄露原理">防泄露原理</a> •
+  <a href="#-分流组结构">分流组结构</a> •
+  <a href="#-规则优先级">规则优先级</a> •
   <a href="#-审计读数">审计读数</a> •
-  <a href="#-规则来源">规则来源</a> •
   <a href="#️-注意事项">注意事项</a>
 </p>
 
@@ -96,6 +97,89 @@ egern-anti-dns-leak/
 启动期、节点域名解析、业务解析 —— 三条路径都不再接触明文 `:53`。
 
 > 完整推导（含两个反直觉事实、兜底组「直连可达」判据）见 [`DetailsReadme` §2](DetailsReadme/DetailsReadme.md#2-防泄露原理从机制到推导) 与 [`docs/02`](docs/02-DNS为什么会泄露.md)。
+
+---
+
+## 🎯 分流组结构
+
+以 **`v2`** 为例（29 个组 / 24 条规则；`v0` 只留 4 组 9 条，见其文件内注释）。**组与组可以互相引用**，最终都收敛到 `Proxy` 或 `DIRECT`。
+
+### ✈️ 节点来源
+
+| 策略组 | 类型 | 说明 |
+|:------:|:----:|:-----|
+| `Airport-A` / `Airport-B` / `Airport-C` | `external` | 从订阅 URL 拉节点（模板是 `sub.example.com` 占位，**必须换成你的**） |
+| `Airport-Free` | `smart` | 免费节点组，同样带订阅 URL |
+
+### 🚀 核心组
+
+| 策略组 | 类型 | 说明 |
+|:------:|:----:|:-----|
+| `Proxy` | `select` | **主入口** · 手动选路（默认列出 `MAX` / `Smart` / 各地区） |
+| `Smart` | `smart` | 智能选优 · 组内多轮测速，按延迟 / 抖动 / 可靠性打分 |
+| `MAX` | `smart` | 倍率筛选 · `filter: 0\.(?:01\|1)` |
+| `Final` | `select` | **兜底组** · 所有未命中规则的流量走这里 |
+| `AD` | `select` | 广告拦截 · 默认 `REJECT`，想临时放行切 `DIRECT` |
+
+### 🤖 AI 组
+
+| 策略组 | 类型 | 说明 |
+|:------:|:----:|:-----|
+| `AI` | `smart` | **总入口** · 指向 `Proxy`，承接 `AI.list` |
+| `ChatGPT` | `fallback` | 故障转移 · 按顺序取第一个可用（当前 `[]` 待填） |
+| `Gemini` | `fallback` | 同上 |
+| `Claude` | `smart` | 默认指向 `Taiwan` |
+
+### 🌍 地区组（`smart` + `filter` 正则）
+
+| 策略组 | 筛选关键词（节选） | 上游 |
+|:------:|:------------------:|:----:|
+| `Hong Kong` | 香港 / HK / HKG | Airport-A · B |
+| `USA` | 美国 / USA / LAX / SJC … | Airport-A · B |
+| `Japan` | 日本 / 东京 / NRT / KIX … | Airport-C · A · B |
+| `Taiwan` | 台湾 / TW / TPE | Airport-A · B |
+| `Singapore` | 新加坡 / SG / SIN | Airport-A · B |
+| `Korea` | 韩国 / KR / ICN | Smart · Airport-A · B |
+| `Other Regions` | **负向断言**：排除以上全部 | Airport-A · B |
+
+> ⚠️ 「按正则把节点归类」是 **`filter`** 干的，不是 `smart` 本身 —— `smart` 只负责在筛出来的节点里选最优。
+
+### 📦 服务组
+
+| 策略组 | 默认策略 | 承接的规则集 |
+|:------:|:--------:|:------------:|
+| `Spotify` | `Proxy` | Spotify |
+| `YouTubeMusic` | `Proxy` | YouTubeMusic |
+| `YouTube` | `Proxy` | YouTube |
+| `GitHub` | `Proxy` | GitHub |
+| `Google` | `Gemini` → `Proxy` | Google |
+| `Microsoft` | `DIRECT` → `Proxy` | Microsoft |
+| `Telegram` | `Proxy` | Telegram |
+| `Twitter` | `Proxy` | Twitter |
+| `WeChat` | `DIRECT` | WeChat |
+
+---
+
+## 📋 规则优先级
+
+`rules` 是**有序的** —— 自上而下匹配，**第一条命中即决定去向**，后面的不再看。
+
+```
+ 1. 🛡️ 白名单守卫   jinx white-guard             → 直连
+ 2. 🚫 广告拦截     jinx ads / AWAvenue           → 拒绝
+ 3. 🏠 内网直连     Lan                           → 直连
+ 4. 🤖 AI 分流      OpenAI / Gemini / Anthropic / Claude / AI.list → AI 组
+ 5. 🎵 流媒体       Spotify / YouTubeMusic / YouTube → 代理
+ 6. 🔧 科技服务     GitHub / Google / Microsoft   → 代理
+ 7. 💬 社交         Telegram / Twitter            → 代理
+ 8. 🍎 Apple 服务   Apple_All_No_Resolve          → 直连
+ 9. 🫧 微信         WeChat                        → 直连
+10. 🇨🇳 国内直连    direct.txt + .cn 后缀         → 直连
+11. 🌏 GeoIP CN    中国 IP（no_resolve）          → 直连
+12. 🌐 兜底        default                        → Final
+```
+
+> 完整的 24 条逐条清单见 [`DetailsReadme` §1.4](DetailsReadme/DetailsReadme.md#14-rules--匹配表与直连规则集)。
 
 ---
 
