@@ -217,7 +217,7 @@ forward:
 | 1 | `upstreams` / `proxy_nameservers` 端点是否为 IP 字面量 | 出现主机名端点 → 必被 bootstrap 明文解析一次 | 高（境外）/ 低（国内） |
 | 2 | 节点 `server` 是域名时，`forward` 是否接住 | 没接住 → 节点域名明文暴露 | 高 |
 | 2b | `proxy_nameservers` 是否存在 | 它是硬覆盖，一设就绕过 forward；推荐「不设 + forward 显式覆盖」 | 中 |
-| 3 | DNS 端点是否有显式路由 | 主机名端点会落 `default` 被错判出口；国内端点必须 `DIRECT`，境外必须 `Proxy` | 高 |
+| 3 | DNS 端点是否全为 IP 字面量（无需在 `rules` 钉路由） | 主机名端点才需在 `rules` 显式路由（否则落 `default` 错判出口）；**本模板全部 IP 字面量，故 `rules` 中已无 DNS 端点路由规则**，此条由清单 1 覆盖 | 高（仅在你自己改用主机名端点时适用） |
 | 4 | `forward` 是否有「直连可达」兜底 | 兜底组内端点全为 IP 字面量 + 至少一个在 `rules` 判给 `DIRECT`；`domain_wildcard:'*'` 和 `domain_regex:'.'` 都算兜底，推荐两条都写 | 高 |
 | 5 | `geoip`/`ip_cidr`/`ip_cidr6`/`asn` 是否带 `no_resolve` | 不加则触发解析 | 高 |
 | 6 | 规则引用的策略名能否解析 | 笔误（如「负载均衡」）会成死规则 | 高 |

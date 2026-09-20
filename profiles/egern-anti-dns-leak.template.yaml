@@ -116,17 +116,13 @@ dns:
   #      geoip/asn DB 下载、策略组首轮测速）代理尚未就绪，此时任何一次本地解析都会
   #      掉进 bootstrap 明文 —— 电信蜂窝上就是泄露给电信。
   #   ③ 实际运行中本地解析只服务于 DIRECT 域名。本配置 DIRECT 的域名来源是：
-  #        规则 0/1   alidns.com / doh.pub                 （国内）
-  #        规则 19    Lan.list                             （私网）
-  #        规则 41    Apple_All_No_Resolve.list            （Apple，国内有 CDN）
-  #        规则 43    xhscdn.com                           （国内）
-  #        规则 44    ChinaMax_All_No_Resolve.list         （国内 111,332 条域名）
-  #        规则 45    domain_suffix: cn                    （国内）
+  #        Lan.list（私网）/ Apple_All_No_Resolve / xhscdn.com / ChinaMax_All_No_Resolve
+  #        （国内 111,332 条域名）/ domain_suffix: cn —— 全是国内与 Apple 域名，
   #      全是国内与 Apple 域名 —— 国内加密 DNS 对它们本来就更优更快。而走代理的域名
   #      由节点远程解析（代理 DNS），根本不经过本节，所以不存在「需要境外答案」的域名。
   #   ④ 兜底组 Domestic-DNS 的 6 个端点全部是 IP 字面量 ⇒ 自身不需要 bootstrap 解析；
-  #      且 223.5.5.5 / 223.6.6.6 / 1.12.12.12 / 120.53.53.53 在 rules 里判给 DIRECT
-  #      ⇒ **不依赖代理也永远活着**（启动阶段可用）。
+  #      且这 6 个 IP 字面量端点由 DNS 模块直接访问，不依赖 rules 路由或代理就绪，
+  #      ⇒ **启动阶段即可用**。
   #   两条兜底刻意用两种互不依赖的匹配语义（官方：domain_regex 是 PCRE2 find 式，
   #   '.' 命中任意子串；domain_wildcard 是官方示例与社区配置的主用法）。任何一条生效，
   #   bootstrap 都不会成为用户域名的回退。
@@ -428,66 +424,9 @@ policy_groups:
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Final.png
     hidden: false
 rules:
-# ---- DNS 端点固定路由（置于最前，保证任何规则集都拦不到它们）----------------
-# 为什么要显式写：geoip: CN 加上 no_resolve 之后只匹配「已经是 IP」的连接，
-# 不再匹配域名。加密 DNS 端点若写成主机名，就会一路落到 default -> Final -> Proxy。
-# 顺序：先钉住国内端点（直连），再钉住境外端点（经代理）。
-- domain_suffix:
-    match: alidns.com
-    policy: DIRECT
-- domain:
-    match: doh.pub
-    policy: DIRECT
-- ip_cidr:
-    match: 223.5.5.5/32
-    policy: DIRECT
-    no_resolve: true
-- ip_cidr:
-    match: 223.6.6.6/32
-    policy: DIRECT
-    no_resolve: true
-- ip_cidr:
-    match: 1.12.12.12/32
-    policy: DIRECT
-    no_resolve: true
-- ip_cidr:
-    match: 120.53.53.53/32
-    policy: DIRECT
-    no_resolve: true
-- domain:
-    match: dns.google
-    policy: Proxy
-- domain_suffix:
-    match: cloudflare-dns.com
-    policy: Proxy
-- ip_cidr:
-    match: 8.8.8.8/32
-    policy: Proxy
-    no_resolve: true
-- ip_cidr:
-    match: 8.8.4.4/32
-    policy: Proxy
-    no_resolve: true
-- ip_cidr:
-    match: 1.1.1.1/32
-    policy: Proxy
-    no_resolve: true
-- ip_cidr:
-    match: 1.0.0.1/32
-    policy: Proxy
-    no_resolve: true
-- ip_cidr:
-    match: 9.9.9.9/32
-    policy: Proxy
-    no_resolve: true
-- ip_cidr:
-    match: 208.67.222.222/32
-    policy: Proxy
-    no_resolve: true
-- ip_cidr:
-    match: 208.67.220.220/32
-    policy: Proxy
-    no_resolve: true
+# 注：原「DNS 端点固定路由」规则（alidns / doh.pub / dns.google / cloudflare-dns 及若干 DNS 服务器 IP）
+# 已全部移除 —— 本模板 dns.upstreams / proxy_nameservers / bootstrap 均为 IP 字面量，解析器直接以 IP 访问，
+# 无需在 rules 中钉域名/IP；移除不影响防 DNS 泄露（详见 DetailsReadme 的「配置框架逐段详解」）。
 # ---- 以下为原有规则，顺序保持不变 ------------------------------------------
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
@@ -574,7 +513,6 @@ rules:
 # ★ v8 核心改动：ChinaMax.list -> ChinaMax_All_No_Resolve.list
 #   事故现象：v7 把 DNS 泄露治住之后，国内域名整片落到 default → Final → Proxy。
 #   根因不在 DNS，在**分流**：v7 给 geoip:CN 加的 no_resolve（治泄露的关键，
-#   官方语义「不会触发 DNS 解析」）同时让 geoip **不再匹配域名** —— 而这条 geoip
 #   正是原配置里国内域名走直连的唯一机制：
 #       收到域名 → 强制本地解析（当年泄露的来源）→ 判出 CN IP → DIRECT。
 #   机制撤掉后本该补位的 ChinaMax 兜不住：按该仓库自己的 README，
