@@ -290,6 +290,14 @@ policy_groups:
     hidden: false
 rules:
 - rule_set:
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
+    policy: DIRECT
+    disabled: false
+- rule_set:
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
+    policy: AD
+    disabled: false
+- rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
     policy: AD
     disabled: false

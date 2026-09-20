@@ -437,7 +437,7 @@ S="skill/scripts"
 
 一句话：**`no-resolve` 是「IP 规则的开关」，与域名规则无关。** 判据是「这条规则能不能匹配 IP」，而不是「别人的配置里写了没写」。代价见 Q3：给 IP 规则关掉解析判定后，必须用域名规则补回来。
 
-> **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **19 个**远程规则集中，**9 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
+> **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **21 个**远程规则集中，**11 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads / **jinx white-guard** / **jinx ads**，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
 
 **Q5：`Foreign-DNS` 被注释了，我还能用吗？**
 能。取消注释，并把 forward 兜底 `value` 改回 `Foreign-DNS` 即可。但注意：若它作兜底且代理未就绪，会掉进明文 `:53`。v10 默认用国内组兜底，正是为了避免这条路径。

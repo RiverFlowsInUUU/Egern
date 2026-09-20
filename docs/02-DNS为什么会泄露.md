@@ -130,7 +130,7 @@ python skill/scripts/profile_ruleset.py https://.../Apple_All.list
 ```
 
 > 实测：`Apple_All.list` 与 `Apple_All_No_Resolve.list` 均为 **1616 条**，去掉 `,no-resolve` 后**逐条相同**，只有那 13 条补上了后缀 ⇒ 覆盖面零损失，对 IP 形式连接的判定也完全不受影响（IP 本就无需解析）。
-> **全部 20 个远程规则集逐个下载核对后：只有 `Apple_All.list` 存在这个缺陷。** 但这恰恰说明**必须逐个查，不能抽查**。
+> **全部 22 个远程规则集逐个下载核对后（含 2026-09-21 新增的 `white-guard` / `ads` 两条纯域名规则集）：只有 `Apple_All.list` 存在这个缺陷。** 但这恰恰说明**必须逐个查，不能抽查**。
 
 ---
 

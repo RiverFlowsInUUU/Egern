@@ -350,7 +350,15 @@ rules:
 # 注：原「DNS 端点固定路由」规则（alidns / doh.pub / dns.google / cloudflare-dns 及若干 DNS 服务器 IP）
 # 已全部移除 —— 本模板 dns.upstreams / proxy_nameservers / bootstrap 均为 IP 字面量，解析器直接以 IP 访问，
 # 无需在 rules 中钉域名/IP；移除不影响防 DNS 泄露（详见 DetailsReadme 的「配置框架逐段详解」）。
-# ---- 以下为原有规则，顺序保持不变 ------------------------------------------
+# ---- 原有规则（2026-09-21 在其之前新增了 white-guard / ads 两条；原有规则之间顺序不变）----
+- rule_set:
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
+    policy: DIRECT
+    disabled: false
+- rule_set:
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
+    policy: AD
+    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
     policy: AD

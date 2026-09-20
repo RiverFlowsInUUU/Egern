@@ -332,7 +332,7 @@ aaaa.dnsleaktest.com
   ⇒ 于是日志里"判定"与"解析"看起来矛盾：「default → Final → Proxy」但 upstream 是 bootstrap
 ```
 **诊断要点：`upstream: <明文标签>` 与"判定结果看起来没问题"同时出现 ⇒ 去找"为了判定某个规则而被迫发生的解析"。**
-排查顺序：把 profile 里**所有** `rule_set` / `proxy_rule_set` 的 URL 抓下来，逐个统计"IP 类条目里有多少条不带 `no-resolve`"，并确认该规则 `disabled` 与否。实测 20 个规则集的结论：**只有 `Apple_All.list` 有问题（13/13 全裸）**，其余（含 12614 条的 `ChinaMax.list`，12473 条 IP 全带）都干净 —— 所以这类问题不是"普遍存在"，而是**个别文件埋的雷，必须逐个核对**。
+排查顺序：把 profile 里**所有** `rule_set` / `proxy_rule_set` 的 URL 抓下来，逐个统计"IP 类条目里有多少条不带 `no-resolve`"，并确认该规则 `disabled` 与否。实测 22 个规则集的结论（含 2026-09-21 新增的 `white-guard` / `ads`，两条均为纯域名、无 IP 条目）：**只有 `Apple_All.list` 有问题（13/13 全裸）**，其余（含 12614 条的 `ChinaMax.list`，12473 条 IP 全带）都干净 —— 所以这类问题不是"普遍存在"，而是**个别文件埋的雷，必须逐个核对**。
 
 **修法优先级**：
 1. ⭐ **换用同源等价文件**。blackmatrix7 的命名约定：`XXX.list`（标准）/ **`XXX_No_Resolve.list`（IP 条目全带 no-resolve，首选）** / `XXX_Resolve.list`（全不带）/ `XXX_Domain.list`（纯域名）。Apple 实测 `Apple_All_No_Resolve.list` 与 `Apple_All.list` 在**去掉 `,no-resolve` 后 1616 条逐条相同** ⇒ 换 URL 就完事，覆盖范围零损失，**对 IP 形式的连接判定也完全不受影响**（IP 本就不需要解析）。
@@ -539,7 +539,7 @@ bash scripts/../tests/run.sh                                       # ★★ 回�
 误判成「待解析域名」，同一份配置读数从 0 high 翻成 9 high。`tests/scheme_case.yaml` 是这条的守卫。
 
 `check_egern_dns.py` 输出 `OK / LOW / HIGH` 三类，有 `HIGH` 时退出码 1，覆盖上面清单 1–15 项。
-清单 16 由 `audit_ruleset_noresolve.py` 单独覆盖（要下载**全部被引用的**规则集，几十秒，不塞进同一个脚本；有 `.ruleset-cache/` 本地缓存，加 `--offline` 可只读缓存）。实测判别力：**原始配置 → HIGH（`Apple_All.list` 13 条），v7 → OK（20 个全过）**。⚠️ 数量会随配置变化：v10 是 **19 个**（少的那 1 个 = `forward` 不再引用 `ChinaDomain.list`）—— 报数变少时先确认是"少引用"而不是"漏扫"。
+清单 16 由 `audit_ruleset_noresolve.py` 单独覆盖（要下载**全部被引用的**规则集，几十秒，不塞进同一个脚本；有 `.ruleset-cache/` 本地缓存，加 `--offline` 可只读缓存）。实测判别力：**原始配置 → HIGH（`Apple_All.list` 13 条），v7 → OK（20 个全过）**。⚠️ 数量会随配置变化：v10 是 **19 个**（少的那 1 个 = `forward` 不再引用 `ChinaDomain.list`）；2026-09-21 新增 `white-guard` / `ads` 两条后为 **21 个** —— 报数变化时先确认是"少引用"而不是"漏扫"。
 
 v3 起新增：① **节点域名覆盖检查**（从 `proxies[].server` 自动提取域名，逐个查 `forward` 是否有非兜底规则接住）；② **兜底语义识别**（`domain_wildcard:'*'` 与 `domain_regex:'.'` 都认，不再依赖"必须在最后一条"）。
 ⚠️ **①在 v7/v10 后已反转**：`proxy_nameservers` 一旦显式设置，代理 DNS 就跳过 `forward` ⇒ 该检查的判据改为"`proxy_nameservers` 是否显式设置且端点全为 IP 字面量"，而"forward 里有没有为节点域名单列规则"变成**要主动避免的事**（坑 18）。

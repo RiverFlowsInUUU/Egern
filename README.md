@@ -127,4 +127,4 @@ CI 见 `.github/workflows/audit-regression.yml`。
   [Koolson/Qure](https://github.com/Koolson/Qure)，已统一存入本仓库 `icons/`，
   **不跨项目引用任何图标地址**。
 - 本项目采用 MIT 许可证，见 [LICENSE](LICENSE)。
-- 第三方规则集（blackmatrix7 / ACL4SSR / AWAvenue / Qure 等）版权归其原作者。
+- 第三方规则集（blackmatrix7 / ACL4SSR / AWAvenue / jinx-ads-rules / Qure 等）版权归其原作者。

@@ -114,27 +114,37 @@ policy_groups:
     hidden: false
 # ============================================================================
 # 规则：顺序就是一切（自上而下第一条命中即决定去向）
-#   ① 广告拦截   ② 内网直连   ③ AI 分流
-#   ④ 直连集合（国内域名 / cn 后缀 / geoip CN）   ⑤ 兜底
+#   ① 白名单守卫   ② 广告拦截   ③ 内网直连   ④ AI 分流
+#   ⑤ 直连集合（国内域名 / cn 后缀 / geoip CN）   ⑥ 兜底
 # ============================================================================
 rules:
-# ① 广告拦截 —— 必须放最前面，否则会被后面的直连规则抢走。
+# ① 白名单守卫 —— **必须放最前面**：这些域名要抢在广告规则之前放行，
+#    否则会被下面的广告规则误杀。（42 条 DOMAIN 精确匹配）
+- rule_set:
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
+    policy: DIRECT
+    disabled: false
+# ② 广告拦截 —— 两条并列（先 jinx，后 AWAvenue），都指向 AD。
+- rule_set:
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
+    policy: AD
+    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
     policy: AD
     disabled: false
-# ② 内网 / 局域网 —— 必须直连。
+# ③ 内网 / 局域网 —— 必须直连。
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
     disabled: false
-# ③ AI 分流 —— 命中即走 AI 组（→ Proxy）。
+# ④ AI 分流 —— 命中即走 AI 组（→ Proxy）。
 - rule_set:
     name: AI
     match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
     policy: AI
     disabled: false
-# ④ 直连集合 —— 以下 3 条共同承担「国内流量直连」。
+# ⑤ 直连集合 —— 以下 3 条共同承担「国内流量直连」。
 #    ⚠️ 原 v1/v2 在这里还有一条 Apple_All_No_Resolve.list（Apple 全域名直连），
 #    v0 已移除 —— Apple 流量变成「部分直连、部分走代理」，详见文件末尾第 3 条。
 #    Loyalsoldier direct.txt：11 万条纯域名，是国内直连的主承重墙。
@@ -150,7 +160,7 @@ rules:
     match: CN
     policy: DIRECT
     no_resolve: true
-# ⑤ 兜底 —— 所有未命中规则的流量走 Final（→ Proxy）。
+# ⑥ 兜底 —— 所有未命中规则的流量走 Final（→ Proxy）。
 - default:
     name: Final
     policy: Final
