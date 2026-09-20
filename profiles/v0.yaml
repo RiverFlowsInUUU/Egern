@@ -1,0 +1,188 @@
+# ============================================================================
+# v0 · 极简裁剪版
+#
+# 只保留 4 个策略组（Proxy / AI / AD / Final）与 4 类规则
+# （广告拦截 / 国内直连 / AI 分流 / 兜底）。
+#
+# ⚠️ v0 与 v1/v2 的关系：**不是"精简"，是"裁剪"**
+#     v1 → v2 砍的是 dns 段的冗余写法（功能不变）；
+#     v2 → v0 砍的是功能本身（地区组、订阅组、各类 App 分组及其规则全部移除）。
+#     保留部分的防 DNS 泄露结构与 v2 完全一致（dns 段逐字相同）。
+#
+# ⚠️ 导入前必读：`Proxy` 组的 policies 是空的 `[]`。
+#     v2 里它列着 MAX / Smart / Hong Kong / USA … 这些组，v0 全部移除了，
+#     所以这里必须由你填上自己的节点名（或订阅组名）。
+#     在填好之前，`Final → Proxy` 是断的 —— 也就是**所有走代理的流量都不通**。
+# ============================================================================
+ipv6: false
+vif_only: true
+hijack_dns:
+- '*'
+geoip_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
+asn_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/GeoLite2-ASN.mmdb
+proxy_latency_test_url: http://cp.cloudflare.com/generate_204
+direct_latency_test_url: http://connectivitycheck.platform.hicloud.com/generate_204
+compat_route: false
+include_all_networks: false
+include_apns: false
+real_ip_domains:
+- '*.lan'
+- '*.local'
+- '*.push.apple.com'
+# ============================================================================
+# dns 段 —— 与 v2 逐字相同（防泄露结构完整保留）
+#
+# 判据：删掉某一项，会不会多出一条明文 UDP:53 的通路？不会 → 冗余。
+# 明文通路只有 bootstrap 一条，官方规定它只有两个用途：① 解析 upstreams 中
+# 加密 DNS 的主机名；② 作为最终回退。本段让两者都无事可做：
+#   ① 端点全写 IP 字面量 ⇒ 没有主机名需要解析；
+#   ② forward 有一条 catch-all 兜底，且兜底组不依赖代理也活着 ⇒ 永不触发。
+# 完整推导见 docs/04-模板逐段讲解.md §2。
+# ============================================================================
+dns:
+  # 启动 DNS：唯一无法消除的明文通路，只能约束它。
+  # 不能删（不写会退到「系统 DNS」= 运营商），也绝不能写 system。
+  # 2 个端点、跨机构：任一机构故障时还有另一个。
+  bootstrap:
+  - 223.5.5.5      # 阿里 AliDNS
+  - 119.29.29.29   # 腾讯 DNSPod
+  # 上游组：端点必须是 IP 字面量，否则就得先解析它的主机名（那只能用 bootstrap 明文）。
+  # 2 机构 × 2 协议（DoH 443 / DoT 853）是两条独立通路，某些网络会拦其一。
+  upstreams:
+    Domestic-DNS:
+    - https://223.5.5.5/dns-query
+    - tls://223.5.5.5
+    - https://120.53.53.53/dns-query
+    - tls://1.12.12.12
+  # 一条 catch-all 兜底：任何域名都不会「未命中 Forward」⇒ 永不回退 bootstrap。
+  forward:
+  - domain_wildcard:
+      match: '*'
+      value: Domestic-DNS
+  # 代理 DNS 显式钉住（跳过 Forward）。删掉它功能上等价，但结构上
+  # 「代理 DNS 未命中 → bootstrap」这条分支就还在。
+  proxy_nameservers:
+  - https://223.5.5.5/dns-query
+  - tls://223.5.5.5
+  - https://120.53.53.53/dns-query
+  - tls://1.12.12.12
+  # 抗污染：丢弃空路由式应答。
+  block_ips:
+  - 0.0.0.0
+  - 127.0.0.1
+# ============================================================================
+# 节点：留空，由你填写
+# ============================================================================
+proxies: []
+# ============================================================================
+# 策略组：只留 4 个
+# ============================================================================
+policy_groups:
+# 手动选路入口。⚠️ policies 为空，必须填上你自己的节点名（或订阅组名），
+# 否则 Final → Proxy 是断的。
+- select:
+    name: Proxy
+    policies: []
+    flatten: false
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Proxy.png
+    hidden: false
+# AI 流量出口。v2 里还并列着 ChatGPT / Gemini / Claude 三个独立组，
+# v0 只保留这一个总入口，它们全部并入此处。
+- smart:
+    name: AI
+    policies:
+    - Proxy
+    flatten: false
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
+    hidden: false
+# 广告拦截。默认选 REJECT（拦截）；想临时放行就手动切到 DIRECT。
+- select:
+    name: AD
+    policies:
+    - REJECT
+    - DIRECT
+    flatten: false
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/AdBlock.png
+    hidden: false
+# 兜底组：所有未命中规则的流量走这里，当前指向 Proxy。
+- select:
+    name: Final
+    policies:
+    - Proxy
+    flatten: false
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Final.png
+    hidden: false
+# ============================================================================
+# 规则：顺序就是一切（自上而下第一条命中即决定去向）
+#   ① 广告拦截   ② 内网直连   ③ AI 分流
+#   ④ 直连集合（国内域名 / cn 后缀 / geoip CN）   ⑤ 兜底
+# ============================================================================
+rules:
+# ① 广告拦截 —— 必须放最前面，否则会被后面的直连规则抢走。
+- rule_set:
+    match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
+    policy: AD
+    disabled: false
+# ② 内网 / 局域网 —— 必须直连。
+- rule_set:
+    match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
+    policy: DIRECT
+    disabled: false
+# ③ AI 分流 —— 命中即走 AI 组（→ Proxy）。
+- rule_set:
+    name: AI
+    match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
+    policy: AI
+    disabled: false
+# ④ 直连集合 —— 以下 3 条共同承担「国内流量直连」。
+#    ⚠️ 原 v1/v2 在这里还有一条 Apple_All_No_Resolve.list（Apple 全域名直连），
+#    v0 已移除 —— Apple 流量变成「部分直连、部分走代理」，详见文件末尾第 3 条。
+#    Loyalsoldier direct.txt：11 万条纯域名，是国内直连的主承重墙。
+- rule_set:
+    match: https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/direct.txt
+    policy: DIRECT
+- domain_suffix:
+    match: cn
+    policy: DIRECT
+#    geoip CN 是 IP 类规则，**必须带 no_resolve** —— 否则每个走到它的域名
+#    都会被强制本地解析一次，那正是泄露来源。
+- geoip:
+    match: CN
+    policy: DIRECT
+    no_resolve: true
+# ⑤ 兜底 —— 所有未命中规则的流量走 Final（→ Proxy）。
+- default:
+    name: Final
+    policy: Final
+default_proxy_group: Proxy
+# ----------------------------------------------------------------------------
+# 相对 v2 移除了什么（需要时从 v2.yaml 抄回）
+#
+# 策略组（25 个）：
+#   Smart、ChatGPT、Gemini、Claude、Spotify、YouTubeMusic、YouTube、GitHub、
+#   Google、Microsoft、Telegram、Twitter、Airport-A/B/C/Free、WeChat、
+#   Hong Kong、USA、Japan、Taiwan、Singapore、Korea、Other Regions、MAX
+# 规则（14 条）：
+#   ChatGPT / Gemini / Anthropic / Claude / Spotify / YouTubeMusic / YouTube /
+#   GitHub / Google / Microsoft / Telegram / Twitter / WeChat
+#   （另有一条 disabled 的 Proxy.list，v2 里本来就是关的）
+#   + Apple_All_No_Resolve.list —— 这条 v1/v2 都有，v0 额外删掉
+#
+# ⚠️ 三点后果，导入前想清楚：
+#   1. `Proxy` 的 policies 现在是空的 —— 必须填节点，否则代理流量全断。
+#   2. 移除 WeChat 组后，微信流量改由 geoip CN / direct.txt 兜住，仍然直连；
+#      但如果你有特殊需求（例如需要走代理的微信场景），要自己加回来。
+#   3. 移除 Apple_All_No_Resolve 后，Apple 流量变成「一部分直连、一部分走代理」。
+#      实测依据（direct.txt 共 110,607 条 DOMAIN-SUFFIX + 553 条 DOMAIN）：
+#      · **走代理**：icloud.com 及全部 iCloud 子域（gateway / setup / p01-* 等）、
+#        apple.com 裸域、appstore.com、push.apple.com。
+#        ⚠️ iCloud 系在 direct.txt 里**一条都没有** —— 这是影响最大的部分。
+#        ⚠️ push.apple.com 虽然在 real_ip_domains 里，但那只是「DNS 返回真实 IP、
+#           不做 fake-ip」，**不改变路由去向**，所以它仍走代理。
+#      · **仍直连**：direct.txt 里那 257 条 Apple 精确条目 —— www.apple.com /
+#        mesu.apple.com / swcdn.apple.com / gs-loc.apple.com /
+#        amp-api.apps.apple.com / *.mzstatic.com 等（**全是 DOMAIN 精确匹配**，
+#        没有 apple.com / icloud.com 的后缀条目）；
+#        以及所有 .cn 域名（domain_suffix: cn 兜住，含 apple.com.cn / icloud.com.cn）。
+#      结论：iCloud 同步 / 备份 / 网页版会走节点，速度取决于节点质量。
+# ----------------------------------------------------------------------------
