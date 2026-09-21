@@ -643,15 +643,16 @@ v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随�
 
 ```
 README.md                                   # 三条铁律 + 一图看懂回退链
-profiles/v2.1.yaml                          # 脱敏模板 · 推荐版（无节点、无订阅、无证书）
-profiles/v2.1.min.yaml                      # 同上，纯配置版（去注释）
+profiles/v2.2.yaml                          # 脱敏模板 · 推荐版（无节点、无订阅、无证书；机场槽位 2 个）
+profiles/v2.2.min.yaml                      # 同上，纯配置版（去注释）
+profiles/v2.1.yaml / v2.1.min.yaml          # 保留（与 v2.2 只差机场槽位：4 个 vs 2 个）
 profiles/v2.yaml / v2.min.yaml              # 保留原样（比 v2.1 多 52 行「值等于默认值」的冗余行）
 profiles/v1.yaml / v1.min.yaml              # 旧版，保留不删（dns 段较冗长，功能等价）
 profiles/v0.yaml / v0.min.yaml              # 极简裁剪版（4 组 / 9 条规则，Final 隐藏、AD 只留 REJECT）
 docs/01-DNS是怎么工作的.md                   # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
 docs/02-DNS为什么会泄露.md                   # 5 个真实案例（每个：现象→机制→修法）
 docs/03-加固清单-18项.md                     # 清单 + no_resolve 三层级 + 验收 6 条
-docs/04-模板逐段讲解.md                      # 逐段讲模板，含"必须替换的 4 处"
+docs/04-模板逐段讲解.md                      # 逐段讲模板，含「必须替换的清单」（2 处）
 docs/05-分流与no_resolve必须成对交付.md       # v7→v8 事故复盘
 docs/06-实测数据与版本谱系.md                 # 端点实测表 / 污染实测表 / v1→v8 谱系
 skill/                                       # 本 skill（含全部脚本）
