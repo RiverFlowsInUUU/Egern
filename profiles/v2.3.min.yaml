@@ -55,11 +55,15 @@ policy_groups:
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Auto.png
 - fallback:
     name: ChatGPT
-    policies: []
+    policies:
+    - Proxy
+    flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
 - fallback:
     name: Gemini
-    policies: []
+    policies:
+    - Proxy
+    flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/gemini-color.png
 - smart:
     name: Claude

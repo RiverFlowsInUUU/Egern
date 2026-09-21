@@ -644,9 +644,9 @@ v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随�
 
 ```
 README.md                                   # 三条铁律 + 一图看懂回退链
-profiles/v2.2.yaml                          # 脱敏模板 · 推荐版（无节点、无订阅、无证书；机场槽位 2 个）
-profiles/v2.2.min.yaml                      # 同上，纯配置版（去注释）
-profiles/v2.3.yaml / v2.3.min.yaml          # 🧪 测试版（v2.2 + 3 处修正，未真机实测，不替代 v2.2）
+profiles/v2.3.yaml                          # 脱敏模板 · 推荐版（无节点、无订阅、无证书；机场槽位 2 个）
+profiles/v2.3.min.yaml                      # 同上，纯配置版（去注释）
+profiles/v2.2.yaml / v2.2.min.yaml          # 保留（与 v2.3 只差 4 处修正）
 profiles/v2.1.yaml / v2.1.min.yaml          # 保留（与 v2.2 只差机场槽位：4 个 vs 2 个）
 profiles/v2.yaml / v2.min.yaml              # 保留原样（比 v2.1 多 52 行「值等于默认值」的冗余行）
 profiles/v1.yaml / v1.min.yaml              # 旧版，保留不删（dns 段较冗长，功能等价）

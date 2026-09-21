@@ -1,8 +1,6 @@
-# ================================================================ v2.3（测试版）
-# ⚠️ **本版是测试版，不替代 `v2.2`。** `v2.2` 仍是推荐版。
-#    区别只在于 v2.3 修了 v2.2 里三处已知问题，改动**尚未在真机实测**。
-#
-# 本版 = v2.2 + 三处修正，`dns` 段 / `rules` 段逐字相同：
+# ================================================================ v2.3（正式版 · 推荐）
+# 本版 = **v2.2 + 四处修正**，`dns` 段 / `rules` 段逐字相同。
+# ⭐ 推荐版由 `v2.2` 移交给本版；`v2.2` 降为保留版（文件未动，留作对照）。
 #
 #   【修 1】MAX 的 filter 两种错法：既误收、又漏收
 #       v2.2 写的是 `0\.(?:01|1)` —— 只认字面 `0.01` / `0.1`，且没有左边界。
@@ -30,6 +28,18 @@
 #       （两级选优）；加上之后候选是**全部具体节点**（一级选优）。
 #       Smart 的定位是「组内多轮测速选最优」，应当是节点级 —— 故补上。
 #       （v2.2 的注释里写的「MAX 与 Smart 同构」是错的：MAX 有 flatten、Smart 没有。）
+#
+#   【修 4】ChatGPT / Gemini 是空组 ⇒ 导入即静默断流
+#       两组原为 `fallback` + `policies: []`，而规则 4/5 **直接指向它们**
+#       （OpenAI.list → ChatGPT、Gemini.list → Gemini），且 `Google` 组首项就是 `Gemini`。
+#       空组 = 没有任何出口 ⇒ 这些分区的流量在填好之前一直是断的。
+#       现填入 `Proxy` 作安全默认，并加 `flatten: true`：
+#         不加 flatten ⇒ 候选是「Proxy」这一个组单位，fallback 只有 1 个候选，
+#                        等于没有故障转移能力，且 Proxy 一旦不可用整组就断；
+#         加 flatten   ⇒ Proxy 展开成**全部具体节点**，fallback 在节点级按顺序试第一个可用的。
+#       ⇒ 组合效果 = 给 Proxy 补一层「节点级故障转移」。
+#       （官方「通用字段」明确：flatten 在 select / auto_test / smart / fallback /
+#         load_balance 五种基础类型上通用，fallback 用它合法。）
 #
 # ---- 以下为 v2.2 的说明，保留以便对照 ----
 # 本版 = v2.1 的「机场槽位精简版」，dns 段 / 规则 / 服务组全部逐字相同。
@@ -159,11 +169,27 @@ policy_groups:
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Auto.png
 - fallback:
     name: ChatGPT
-    policies: []
+    # 【v2.3 正式版新增】原先 `policies: []` 是**空的** —— 而规则 4 直接指向本组
+    #   （OpenAI.list → ChatGPT）⇒ 导入即静默断流：ChatGPT 相关域名没有任何出口。
+    #   现在填 `Proxy` 作安全默认，并加 `flatten: true`。
+    #
+    #   为什么必须配 flatten（官方「通用字段」说明：flatten 在 select / auto_test / smart /
+    #   fallback / load_balance 五种基础类型上通用）：
+    #     · 不加 flatten ⇒ 候选是「Proxy」这**一个组单位**，fallback 只有 1 个候选，
+    #       等于没有故障转移能力，且 Proxy 一旦不可用整组就断。
+    #     · 加 flatten  ⇒ Proxy 被**展开成全部具体节点**，fallback 在节点级按顺序试第一个可用的。
+    #   组合效果 = 给 Proxy 补了一层「节点级故障转移」。
+    policies:
+    - Proxy
+    flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
 - fallback:
     name: Gemini
-    policies: []
+    # 【v2.3 正式版新增】同 ChatGPT：原为空 `policies: []`，而规则 5 直接指向本组，
+    #   且 `Google` 组的**首项就是 `Gemini`**（默认选中它）⇒ 影响面比 ChatGPT 更大。
+    policies:
+    - Proxy
+    flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/gemini-color.png
 - smart:
     name: Claude
