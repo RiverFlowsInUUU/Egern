@@ -8,7 +8,7 @@
 
 [![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
-[![Profiles](https://img.shields.io/badge/Profiles-v2.5%20%7C%20v0-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
+[![Profiles](https://img.shields.io/badge/Profiles-v2.5%20%7C%20lazy-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![Groups](https://img.shields.io/badge/Groups-27%20%7C%204-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![License](https://img.shields.io/badge/License-MIT-dfb317?style=flat-square)](docs/10-图标与许可.md)
 
@@ -22,10 +22,10 @@
 https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/v2.5.min.yaml
 ```
 
-🪶 **v0** · 一个出口
+🪶 **lazy** · 一个出口（懒人配置）
 
 ```
-https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/v0.min.yaml
+https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/lazy.min.yaml
 ```
 
 选中一条，点右上角复制 → Egern **配置 → 从 URL 下载** → 粘贴。
@@ -67,11 +67,11 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profi
 
 ---
 
-## 🪶 v0
+## 🪶 lazy
 
-`profiles/v0.yaml` · `profiles/v0.min.yaml`
+`profiles/lazy.yaml` · `profiles/lazy.min.yaml`
 
-4 组 / 9 条规则。只做防泄露，不做分流。
+4 组 / 9 条规则。只做防泄露，不做分流。**没有版本号，长期沿用。**
 
 | | |
 |:--|:--|
@@ -91,7 +91,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profi
 
 自上而下匹配，第一条命中即决定去向。
 
-| # | 规则 | ⭐ v2.5 | 🪶 v0 |
+| # | 规则 | ⭐ v2.5 | 🪶 lazy |
 |:-:|:-----|:--------|:------|
 | 🛡️ | 白名单守卫 | `jinx white-guard` → `DIRECT` | 同左 |
 | 🚫 | 广告拦截 | `jinx ads-delta` · `AWAvenue` → `AD` | `jinx ads` · `AWAvenue` → `AD` |
@@ -169,7 +169,7 @@ Egern 有两套 DNS。
 
 ```
 egern-anti-dns-leak/
-├── 📁 profiles/        # 16 份配置：v2.5 / v0 × 带注释 / 纯配置，另 6 份旧版
+├── 📁 profiles/        # 16 份配置：v2.5 / lazy × 带注释 / 纯配置，另 6 份旧版
 ├── 🖼️ icons/           # 策略组图标
 ├── 📚 docs/            # 10 篇专题
 ├── 📘 DetailsReadme/   # 完整技术文档

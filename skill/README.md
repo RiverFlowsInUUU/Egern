@@ -57,7 +57,7 @@ python "$S/audit_ruleset_noresolve.py"    Profile.yaml          # 期望 OK
 python "$S/audit_routing_coverage.py"     Profile.yaml          # 期望 15/15 DIRECT
 python "$S/audit_dns_forward.py"           Profile.yaml          # 期望 通过（forward 与订阅解耦）
                                                                  # --drill 可选（加演练域名），不加也应通过
-python "$S/audit_region_filters.py"       Profile.yaml          # 期望 地区组关键词全部同步（v0 无此结构，自动跳过）
+python "$S/audit_region_filters.py"       Profile.yaml          # 期望 地区组关键词全部同步（lazy 无此结构，自动跳过）
 python "$S/profile_ruleset.py"            ChinaMax.list         # 规则集类型分布
 python "$S/probe_dns_endpoints.py"        Profile.yaml          # 端点实测
 

@@ -121,7 +121,7 @@ printf 'result: %d passed, %d failed\n' "$pass" "$fail"
 # 断言对象是**仓库里的真实 profile**（不是上面的合成 fixture）。
 # 期望全部 rc=0：
 #   · v1 / v2 / v2.1 / v2.2 / v2.3 → 6 个地区组的关键词必须逐字出现在负向断言里
-#   · v0 没有该结构 → 脚本打印"无需校验"并 rc=0
+#   · lazy 没有该结构 → 脚本打印"无需校验"并 rc=0
 # rc=1 = 有地区关键词漏同步（两组不再互斥）；rc=2 = 解析失败 / 用法错误。两者都算失败。
 printf '\n'
 printf '%s\n' "阶段 2 · 地区组 filter 同步回归（跑全部 profiles/*.yaml）"

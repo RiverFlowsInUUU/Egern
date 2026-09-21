@@ -1,16 +1,19 @@
 # ============================================================================
-# v0 · 极简裁剪版
+# lazy · 懒人配置
 #
-# 只保留 4 个策略组（Proxy / AI / AD / Final）与 4 类规则
-# （广告拦截 / 国内直连 / AI 分流 / 兜底）。
+# 只保留 4 个策略组（Proxy / AI / AD / Final）与 6 类规则
+# （白名单守卫 / 广告拦截 / 内网直连 / 国内直连 / AI 分流 / 兜底）。
 #
-# ⚠️ v0 与 v1/v2 的关系：**不是"精简"，是"裁剪"**
-#     v1 → v2 砍的是 dns 段的冗余写法（功能不变）；
-#     v2 → v0 砍的是功能本身（地区组、订阅组、各类 App 分组及其规则全部移除）。
-#     保留部分的防 DNS 泄露结构与 v2 完全一致（dns 段逐字相同）。
+# ⚠️ 它与 v2.5 的关系：**不是"精简"，是"裁剪"**
+#     砍的是功能本身（地区组、订阅组、各类 App 分组及其规则全部移除）。
+#     保留部分的防 DNS 泄露结构与 v2.5 完全一致（dns 段逐字相同）。
+#
+# 📌 本文件**没有版本号**，是长期沿用的「懒人配置」入口。
+#     v1 ~ v2.5 是另一条线（完整分流的历代版本），各自保留以备对照，
+#     演变过程见 docs/07-文件版本沿革.md。
 #
 # ⚠️ 导入前必读：`Proxy` 组的 policies 是空的 `[]`。
-#     v2 里它列着 MAX / Smart / Hong Kong / USA … 这些组，v0 全部移除了，
+#     v2.5 里它列着 MAX / Smart / Hong Kong / USA … 这些组，本配置全部移除了，
 #     所以这里必须由你填上自己的节点名（或订阅组名）。
 #     在填好之前，`Final → Proxy` 是断的 —— 也就是**所有走代理的流量都不通**。
 # ============================================================================
@@ -26,7 +29,7 @@ real_ip_domains:
 - '*.local'
 - '*.push.apple.com'
 # ============================================================================
-# dns 段 —— 与 v2 逐字相同（防泄露结构完整保留）
+# dns 段 —— 与 v2.5 逐字相同（防泄露结构完整保留）
 #
 # 判据：删掉某一项，会不会多出一条明文 UDP:53 的通路？不会 → 冗余。
 # 明文通路只有 bootstrap 一条，官方规定它只有两个用途：① 解析 upstreams 中
@@ -80,15 +83,15 @@ policy_groups:
     name: Proxy
     policies: []
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Proxy.png
-# AI 流量出口。v2 里还并列着 ChatGPT / Gemini / Claude 三个独立组，
-# v0 只保留这一个总入口，它们全部并入此处。
+# AI 流量出口。v2.5 里还并列着 ChatGPT / Gemini / Claude 三个独立组，
+# 本配置只保留这一个总入口，它们全部并入此处。
 - smart:
     name: AI
     policies:
     - Proxy
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
 # 广告拦截。只有一个子策略：REJECT（拦截）。
-# v0 不再提供 DIRECT 兜底 —— 想临时放行某个广告域名，在 rules 里加一条更靠前的
+# 本配置不再提供 DIRECT 兜底 —— 想临时放行某个广告域名，在 rules 里加一条更靠前的
 # domain / domain_suffix 规则指向 DIRECT 即可（别整组切走，那等于关掉全部拦截）。
 - select:
     name: AD
@@ -132,8 +135,8 @@ rules:
     match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
     policy: AI
 # ⑤ 直连集合 —— 以下 3 条共同承担「国内流量直连」。
-#    ⚠️ 原 v1/v2 在这里还有一条 Apple_All_No_Resolve.list（Apple 全域名直连），
-#    v0 已移除 —— Apple 流量变成「部分直连、部分走代理」，详见文件末尾第 3 条。
+#    ⚠️ v1 ~ v2.5 在这里还有一条 Apple_All_No_Resolve.list（Apple 全域名直连），
+#    本配置已移除 —— Apple 流量变成「部分直连、部分走代理」，详见文件末尾第 3 条。
 #    Loyalsoldier direct.txt：11 万条纯域名，是国内直连的主承重墙。
 - rule_set:
     match: https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/direct.txt
@@ -153,7 +156,7 @@ rules:
     policy: Final
 default_proxy_group: Proxy
 # ----------------------------------------------------------------------------
-# 相对 v2 移除了什么（需要时从 v2.yaml 抄回）
+# 相对 v2.5 移除了什么（需要时从 v2.5.yaml 抄回）
 #
 # 策略组（25 个）：
 #   Smart、ChatGPT、Gemini、Claude、Spotify、YouTubeMusic、YouTube、GitHub、
@@ -162,8 +165,8 @@ default_proxy_group: Proxy
 # 规则（14 条）：
 #   ChatGPT / Gemini / Anthropic / Claude / Spotify / YouTubeMusic / YouTube /
 #   GitHub / Google / Microsoft / Telegram / Twitter / WeChat
-#   （另有一条 disabled 的 Proxy.list，v2 里本来就是关的）
-#   + Apple_All_No_Resolve.list —— 这条 v1/v2 都有，v0 额外删掉
+#   （另有一条 disabled 的 Proxy.list，v2.5 里本来就是关的）
+#   + Apple_All_No_Resolve.list —— 这条 v1 ~ v2.5 都有，本配置额外删掉
 #
 # ⚠️ 三点后果，导入前想清楚：
 #   1. `Proxy` 的 policies 现在是空的 —— 必须填节点，否则代理流量全断。

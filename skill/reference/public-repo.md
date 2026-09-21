@@ -18,7 +18,7 @@ profiles/v2.2.yaml / v2.2.min.yaml          # 保留（与 v2.3 只差 4 处修�
 profiles/v2.1.yaml / v2.1.min.yaml          # 保留（与 v2.2 只差机场槽位：4 个 vs 2 个）
 profiles/v2.yaml / v2.min.yaml              # 保留原样（比 v2.1 多 52 行「值等于默认值」的冗余行）
 profiles/v1.yaml / v1.min.yaml              # 旧版，保留不删（dns 段较冗长，功能等价）
-profiles/v0.yaml / v0.min.yaml              # 极简懒人版 · 可选（4 组 / 9 条规则，Final 隐藏、AD 只留 REJECT）
+profiles/lazy.yaml / lazy.min.yaml          # 懒人配置 · 可选（4 组 / 9 条规则，Final 隐藏、AD 只留 REJECT）
 CHANGELOG.md                                # 更新日志（按时间倒序，README 只留引用）
 docs/01-DNS是怎么工作的.md                  # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
 docs/02-DNS为什么会泄露.md                  # 5 个真实案例（每个：现象→机制→修法）
@@ -26,14 +26,14 @@ docs/03-加固清单-18项.md                    # 清单 + no_resolve 三层级
 docs/04-模板逐段讲解.md                     # 逐段讲模板，含「必须替换的清单」（v2.3 起只需 1 处）
 docs/05-分流与no_resolve必须成对交付.md     # v7→v8 事故复盘
 docs/06-实测数据与版本谱系.md               # 端点实测表 / 污染实测表 / v1→v8 谱系
-docs/07-文件版本沿革.md                     # 文件版本 v0→v2.5 逐个说明（可选只有两个）
+docs/07-文件版本沿革.md                     # 文件版本 v1→v2.5 逐个说明（lazy 已退出版本体系，可选只有两个）
 docs/08-审计读数.md                         # 5 个审计脚本的读数 / 2 条 LOW 的含义 / 回归测试
-docs/09-注意事项.md                         # 使用前必看：v0 的 Proxy / 规则集刷新 / 刻意不挂 CI
+docs/09-注意事项.md                         # 使用前必看：lazy 的 Proxy / 规则集刷新 / 刻意不挂 CI
 docs/10-图标与许可.md                       # 图标来源 / MIT 许可 / 第三方版权
 skill/                                      # 本 skill（含全部脚本）
 ```
 
-> **可选版本只有两个** —— `v2.5`（推荐，完整分流）与 `v0`（极简懒人版）；
+> **可选版本只有两个** —— `v2.5`（推荐，完整分流）与 `lazy`（懒人配置）；
 > 其余 `v2.x` / `v1` 都是 `v2.5` 的历代旧版，保留以备对照。
 
 **要更新模板时**：**直接在仓库里改 `profiles/*.yaml` 即可。** 这份模板早已完成脱敏
