@@ -48,14 +48,20 @@ python "$S/audit_region_filters.py"       Profile.yaml          # 期望 地区�
 python "$S/profile_ruleset.py"            ChinaMax.list         # 规则集类型分布
 python "$S/probe_dns_endpoints.py"        Profile.yaml          # 端点实测
 
-bash ./skill/tests/run.sh                                       # 回归测试（5 fixture × 2 脚本 = 10 断言）
+bash ./skill/tests/run.sh                                       # 回归测试两阶段，共 22 断言
 ```
 
-退出码 **0 = 通过**，可直接接进 CI 或提交前检查。
+退出码 **0 = 通过**，用于提交前检查（本仓库**不挂 CI**，全部本地手动跑）。
 规则集缓存写在系统临时目录（`%TEMP%\egern-ruleset-cache` / `/tmp/egern-ruleset-cache`），约 5 MB。
 
-> `tests/run.sh` 是**防退化守卫**：它把 `tests/` 下的 fixture 同时喂给 `check_egern_dns.py` 与
-> `audit_dns_forward.py`，确保两个脚本对同一份配置给出一致结论。**改完脚本或 profile 后手动跑一次。**
+> `tests/run.sh` 是**防退化守卫**，分两阶段：
+> **阶段 1** 把 `tests/` 下的 fixture 同时喂给 `check_egern_dns.py` 与 `audit_dns_forward.py`
+> （5 × 2 = 10 断言），确保两个脚本对同一份配置给出一致结论；
+> **阶段 2** 对仓库里全部 12 份 `profiles/*.yaml` 跑 `audit_region_filters.py`（12 断言），
+> 守住地区组关键词与 `Other Regions` 负向断言的同步。
+> ⚠️ 阶段 2 的断言对象必须是**真实 profile** —— `tests/` 的 fixture 是 DNS 面的合成配置、
+> 没有地区组，喂给 `audit_region_filters.py` 只会走"无需校验"分支（看着绿，其实没测）。
+> **改完脚本或 profile 后手动跑一次。**
 > 共享逻辑（`hostpart` / `ip_literal` / `DOMESTIC_RESOLVER_IPS`）集中在 `scripts/_egern_common.py`，
 > 避免"同一判据两份拷贝、改一处漏另一处"。两个脚本的运行目录里必须有这个文件。
 >

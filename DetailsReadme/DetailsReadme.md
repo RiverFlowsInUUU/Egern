@@ -231,7 +231,7 @@ forward:
   **同一份 IPv6 profile 两个脚本给出相反结论**（0/1）。
   现已把 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal` 收编到共享模块
   `skill/scripts/_egern_common.py`，两个脚本都从它 import —— 从结构上消灭拷贝。
-  并新增 `skill/tests/run.sh`（5 fixture × 2 脚本）作为**防退化守卫**。
+  并新增 `skill/tests/run.sh`（阶段 1：5 fixture × 2 脚本）作为**防退化守卫**。
 - ⚠️ **（三次核查后）"收编"这个动作本身又引入了一次回归**：`hostpart` 剥 scheme 从
   「通用剥离」退化成「大小写敏感白名单」，端点写 `HTTPS://223.5.5.5/dns-query` 时
   `HTTPS` 被当成主机名 ⇒ 同一份配置读数从 **0 high 翻成 9 high**。发布模板端点全小写所以没暴露。
@@ -373,6 +373,7 @@ forward:
   | `audit_ruleset_noresolve.py` | 被引用的规则集文件 | 16 |
   | `audit_routing_coverage.py` | 域名 → 命中规则 → 策略 | 17 |
   | `audit_dns_forward.py` | forward 单值 / 订阅耦合 / 兜底可达 | 18 |
+  | `audit_region_filters.py` | 地区组 filter 与 `Other Regions` 负向断言的同步 | 辅助 |
   | `weigh_ruleset.py` | 规则集重量（构成/冗余/耗时/覆盖） | 辅助 |
   | `probe_dns_endpoints.py` | 端点逐个实测（DoH 线格式 / DoT 握手） | 辅助 |
   | `probe_doh.py` | 只测 DoH 线格式 | 辅助 |
@@ -391,12 +392,17 @@ forward:
 
 ### 8.3 本仓库配套脚本（公开）
 
-除 `skill/scripts/` 的 8 个审计 / 探针脚本外，本仓库的发布链路还包含构建脚本（位于维护者本地 `outputs/`，**不进公开仓库**，避免暴露构建侧的私人源路径）：
+除 `skill/scripts/` 的 9 个审计 / 探针脚本外，早期发布链路还包含一组构建脚本（位于维护者本地 `outputs/`，**不进公开仓库**，避免暴露构建侧的私人源路径）：
 - `_build_public_template.py` —— 从脱敏基线生成模板（dns 段取自加固版、结构取自基线）。
 - `_transform_template.py` —— 在已脱敏产物上做改写（删占位节点、剥节点引用、图标改指本仓库）。
 - `_make_min.py` —— 由带注释版生成纯配置版（去注释）。
 - `_fetch_icons.py` —— 下载整合全部图标到 `icons/`。
 - `_publish_to_github.py` —— 递归遍历 `public/` 走 Git Data API 增量提交。
+
+> ⚠️ **这组脚本当前已不在维护者本机**（2026-09-21 核查确认，全盘搜索无结果）。
+> 它们描述的"从自用配置生成模板"流程**已停用** —— `v2.1` / `v2.2` / `v2.3`
+> 都是在仓库里**直接改 `profiles/*.yaml`** 产出的（模板早已脱敏完毕，无需重新生成）。
+> 此处保留是为了记录方法论；若要恢复该流程，见 §8.2 的 Git Data API 流程重建。
 
 ---
 
@@ -413,6 +419,7 @@ S="skill/scripts"
 "$PY" "$S/audit_ruleset_noresolve.py" Profile.yaml        # 会下载并缓存规则集
 "$PY" "$S/audit_routing_coverage.py" Profile.yaml
 "$PY" "$S/audit_dns_forward.py" Profile.yaml --drill       # 换订阅演练
+"$PY" "$S/audit_region_filters.py" Profile.yaml            # 地区组 filter 同步（v0 无此结构，自动跳过）
 
 # 辅助
 "$PY" "$S/weigh_ruleset.py" ChinaMax_All_No_Resolve.list --sub ChinaDomain.list

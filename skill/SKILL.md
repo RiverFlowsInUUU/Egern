@@ -286,7 +286,7 @@ v3 的审计结果是 `0 high / 1 low`，但用户实测**持续泄露到中国�
 
 ❗ **绝不要采纳「端点全为 IP 即充分」这种更宽的写法** —— 一个全为境外 IP 的组（如纯 `8.8.8.8`）虽是 IP 字面量，却必须经代理才可达，那会**直接回退到坑 13 的 v5 事故形态**。放宽必须保留收紧面。
 回归守卫：`tests/` 目录下有五份合成 profile —— **改 `group_reach` 判据后必须五份都跑**
-（或直接 `bash tests/run.sh`，它把五份同时喂给两个脚本、共 10 个断言）：
+（或直接 `bash tests/run.sh`，**阶段 1** 把五份同时喂给两个脚本、共 10 个断言）：
 
 | profile | 构造 | 期望 | 命令 |
 |---|---|---|---|
@@ -394,7 +394,7 @@ v7 改动：geoip:CN 补上 no_resolve: true（官方：不再触发解析）
 
 ⚠️ **更要提防它带来的错觉**：这些规则让配置**看起来**很严谨（"我专门照顾了节点域名"），实际既无功能，又把"换订阅"变成了一件需要复查配置的事。**判断一条规则该不该存在，只问两个问题：删掉它结果会变吗？它是否引入了维护耦合？**
 
-**配套新增脚本 `scripts/audit_dns_forward.py`（清单 18）**：打印 `forward` 的 value 集合与结构性冗余条数、统计"订阅耦合度"（从 `proxies[].server` 提取节点域名，查有几条 forward 规则把它们写死）、并支持 `--drill` 用**合成的"未来订阅"域名**做演练（默认 6 个故意不在任何规则集里的域名，验证"未命中的域名到底落到哪个上游"）。退出码 0/1，可直接接 CI。
+**配套新增脚本 `scripts/audit_dns_forward.py`（清单 18）**：打印 `forward` 的 value 集合与结构性冗余条数、统计"订阅耦合度"（从 `proxies[].server` 提取节点域名，查有几条 forward 规则把它们写死）、并支持 `--drill` 用**合成的"未来订阅"域名**做演练（默认 6 个故意不在任何规则集里的域名，验证"未命中的域名到底落到哪个上游"）。退出码 0/1，用于提交前本地检查。
 
 ## 定位"泄露到运营商"必须在网络侧实测，不能只看配置
 
@@ -526,7 +526,7 @@ Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可�
 "<venv>/Scripts/python.exe" scripts/profile_ruleset.py some.list    # 规则集类型分布
 "<venv>/Scripts/python.exe" scripts/weigh_ruleset.py some.list [--sub small.list] [--probe d]  # ★ 规则集"重量"：构成/冗余/深度/加载与匹配耗时/覆盖对比
 
-bash scripts/../tests/run.sh                                       # ★★ 回归测试：5 fixture × 2 脚本 = 10 断言，退出码非 0 即失败
+bash scripts/../tests/run.sh                                       # ★★ 回归测试两阶段（10 + 12 = 22 断言），退出码非 0 即失败
 ```
 
 ⚠️ **运行目录要求**：`check_egern_dns.py` 与 `audit_dns_forward.py` 会 import 同目录的
@@ -566,18 +566,24 @@ v10.2 起（2026-09-20，二次核查报告触发）：⑩ **「靠注释提醒�
   `fails = []` 只写在 `if probes:` 块里，而 README / docs / skill 里给的命令**正是不带参数的形态**。
   这个崩溃**旧版就有**，但因为它只被手工喂给 `check_egern_dns.py`，一直没被发现。
 
-⇒ 固化四条：
+⇒ 固化五条：
 1. ⭐⭐ **共用逻辑必须收编成一个模块，不靠注释同步。** 现为 `scripts/_egern_common.py`，
    收 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal`；两个脚本都 import 它。
    **判据可以有两处调用点，但实现只能有一处。**
 2. ⭐⭐ **fixture 必须喂给"所有"脚本，而不是常跑的那一个。** 新增 `scripts/../tests/run.sh`
-   （5 fixture × 2 脚本 = 10 断言），**改脚本 / 改 profile 后手动跑一次**。
+   阶段 1（5 fixture × 2 脚本 = 10 断言），**改脚本 / 改 profile 后手动跑一次**。
    经验：**"只差一点就能抓到"的 bug，恰恰是因为守卫只覆盖了一半**。加守卫时要问："这条断言有没有在
    **每一个**消费方上跑过？"
 3. ⭐ **文档里给的命令必须逐条照着执行一遍。** 这次崩溃的命令就印在 README / docs/04 / skill/README 里。
    文档里的命令是**接口契约**，改脚本后要回填验证（`--drill` 这类可选参数尤其要显式标注"可选"）。
 4. ⭐ **`_egern_common.py` 必须与调用它的脚本同目录。** 用户如果只拷走单个脚本会报 `ModuleNotFoundError`；
    分发/打包时三个文件（`_egern_common.py` + 两个审计脚本）要一起走。
+5. ⭐⭐ **断言对象要选"能真正测到它的那个输入"—— 合成 fixture 测不到的东西，别硬塞进去当绿。**
+   （2026-09-21 新增 `audit_region_filters.py` 时发现）该脚本校验的是 `policy_groups` 段的地区组 filter，
+   而 `tests/` 那五份 fixture 是 **DNS 面的合成配置、根本没有地区组** —— 喂给它只会走"无需校验"分支，
+   **看着绿，其实一个断言都没执行**。所以 `run.sh` 的阶段 2 单独对**仓库里全部 12 份真实 profile** 跑它。
+   判据：**如果一份输入必然走"跳过 / 无此项"分支，那它就不构成断言** —— 加守卫时先问
+   "这份输入里，被判的东西**存在**吗？"
 
 v10.3 起（2026-09-20，三次核查报告触发）：⑪ **"收编共用逻辑"这个动作本身会引入回归 —— 收编时把实现悄悄换掉，比两份拷贝更难发现。**
 本次事故：把 `hostpart` 收进 `_egern_common.py` 时，剥 scheme 从「通用剥离 `if "://" in s: split("://",1)[1]`」
@@ -654,16 +660,25 @@ profiles/v0.yaml / v0.min.yaml              # 极简裁剪版（4 组 / 9 条规
 docs/01-DNS是怎么工作的.md                   # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
 docs/02-DNS为什么会泄露.md                   # 5 个真实案例（每个：现象→机制→修法）
 docs/03-加固清单-18项.md                     # 清单 + no_resolve 三层级 + 验收 6 条
-docs/04-模板逐段讲解.md                      # 逐段讲模板，含「必须替换的清单」（2 处）
+docs/04-模板逐段讲解.md                      # 逐段讲模板，含「必须替换的清单」（v2.3 起只需 1 处）
 docs/05-分流与no_resolve必须成对交付.md       # v7→v8 事故复盘
 docs/06-实测数据与版本谱系.md                 # 端点实测表 / 污染实测表 / v1→v8 谱系
 skill/                                       # 本 skill（含全部脚本）
 ```
 
-**要更新模板时**：不要手改仓库里的 yaml。本地有 `outputs/_build_public_template.py`，
-它从 v8 自用版做**带断言的行级替换**并跑 38 个敏感串的零残留自检 —— 这是唯一正确的入口。
-发布用 `outputs/_publish_to_github.py`（Git Data API 单次提交；空仓库需先落初始化提交，
-否则 `POST /git/blobs` 报 `409 Git Repository is empty`）。方法论见 skill `github-publish-sanitized-repo`。
+**要更新模板时**：**直接在仓库里改 `profiles/*.yaml` 即可。** 这份模板早已完成脱敏
+（无节点、无订阅、无证书），改它不需要"从自用配置重新生成"。改完跑
+`bash skill/tests/run.sh`（两阶段 22 断言）+ 下面那批审计脚本，再提交推送。
+
+> 📦 **历史做法（已不再使用）**：早期由维护者本地的 `outputs/` 脚本链生成 ——
+> `_build_public_template.py`（从自用版做**带断言的行级替换** + 38 个敏感串零残留自检）、
+> `_transform_template.py`、`_make_min.py`（由带注释版生成纯配置版）、`_fetch_icons.py`、
+> `_publish_to_github.py`（Git Data API 单次提交；空仓库需先落初始化提交，
+> 否则 `POST /git/blobs` 报 `409 Git Repository is empty`）。
+> ⚠️ 这些脚本**不在本仓库**（避免暴露构建侧私人路径）—— 2026-09-21 核查时**本机也已找不到**。
+> 换句话说"不要手改仓库里的 yaml"这条老规矩**已作废**：现在的 `v2.1` / `v2.2` / `v2.3`
+> 就是在仓库里直接改出来的。若将来要恢复"从自用配置生成"的流程，方法论见 skill
+> `github-publish-sanitized-repo`，需按它重建脚本。
 
 📌 **本仓库刻意不挂 GitHub Actions（2026-09-21 决定）。**
 曾经加过 `.github/workflows/audit-regression.yml`，后来**主动撤掉**，两个原因：
@@ -675,10 +690,13 @@ skill/                                       # 本 skill（含全部脚本）
    但**没必要留这个面**。
 
 ⇒ 全部验证用本地命令复现：`bash skill/tests/run.sh` + `check_egern_dns.py` /
-`audit_dns_forward.py` / `audit_ruleset_noresolve.py` / `audit_routing_coverage.py`。
+`audit_dns_forward.py` / `audit_ruleset_noresolve.py` / `audit_routing_coverage.py` /
+`audit_region_filters.py`。
 功能上没有任何损失。
 
-> 历史备注（若将来又想加 CI）：**发布 `.github/workflows/` 需要 PAT 具备 `workflow` scope**。
+> 历史备注：**发布 `.github/workflows/` 需要 PAT 具备 `workflow` scope** —— 这正是当初那个
+> workflow 声称"已加"、实际从未上传的原因（见下面 SKILL.md 的教训条目）。此处只记录原因，
+> **不代表建议恢复 CI** —— 本仓库已明确不挂。
 > 只有 `public_repo` 时 GitHub 对「含 workflow 的 tree 创建」返回 **404**（不是 403 ——
 > 它故意不暴露存在性），`_publish_to_github.py` 会静默摘掉该文件、照常推送其余文件。
 > **发布后必须核对交付物，而不是相信脚本的 commit message**：
