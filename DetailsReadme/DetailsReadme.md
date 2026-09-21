@@ -28,14 +28,14 @@
 
 ### 1.1 顶层结构总览
 
-模板由约 15 个顶层段组成，按职责分三类：
+模板由 12 个顶层段组成，按职责分三类：
 
 **A. 全局开关 / 辅助项**
 - `vif_only` —— 是否仅走虚拟接口。
 - `hijack_dns` —— DNS 劫持开关，**接管本地 `:53` 并返回 Fake IP**，是防泄露的第一道闸门（缺失时 App 自带 DoH 仍能绕过）。
 - `geoip_db_url` / `asn_db_url` —— `geoip` / `asn` 规则依赖的地理库（远程 `.mmdb`，非图标，保留原引用）。
 - `proxy_latency_test_url` / `direct_latency_test_url` —— 延迟测试的 HTTP 端点（决定测速走代理还是直连）。
-- `compat_route` / `include_all_networks` / `include_apns` / `real_ip_domains` —— 路由兼容、内网 / APNs 直连白名单等辅助项。
+- `real_ip_domains` —— 不做 Fake IP 映射的域名白名单（APNs / 内网发现走的是「隧道外」链路，用 Fake IP 会异常）。
 
 **B. 核心三段**
 - `proxies` —— 节点定义（**模板为空 `[]`**，由你填写）。
@@ -65,9 +65,11 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 
 要点：
 - **组与组之间可以互相引用**（例如 `Final` 的成员是 `Proxy`，App 组的成员里混入地区组）。这种引用关系保留，是模板的正常结构。
-- **暂时没有成员的组留 `[]`**（如 `ChatGPT` / `Gemini`），等你补节点或订阅组。
-  ⚠️ 注意这两组是 `fallback`（故障转移）：填多个节点时**永远用第 1 个**，不做延迟择优；
-  且规则 3/4 直接指向它们，**填好之前 OpenAI / Gemini 流量是断的**（详见 `docs/04-模板逐段讲解.md` §4）。
+- **`v2.3` 起已无空组**：`ChatGPT` / `Gemini` 曾是 `policies: []` 的空组，而规则直接指向它们
+  ⇒ **导入即静默断流**；现已填成 `[Proxy]` + `flatten: true`。
+  ⚠️ 这两组是 `fallback`（故障转移）：`flatten` 让候选从「`Proxy` 一个组单位」变成全部具体节点，
+  等于给 `Proxy` 补一层**节点级故障转移**；不加 `flatten` 时只有 1 个候选、没有转移能力
+  （详见 `docs/04-模板逐段讲解.md` §4）。
 - **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
 
 ### 1.4 `rules` —— 匹配表与直连规则集
@@ -83,7 +85,9 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 **直连三件套**（决定国内流量不走代理）：
 1. `Lan.list` —— 局域网。
 2. `Apple_All_No_Resolve.list` —— Apple 域名 + 带 `no-resolve` 的 IP，既做直连判定又不重新触发解析。
-3. **国内域名规则集（Loyalsoldier `direct.txt`）** —— 111,160 条**纯域名**（110,607 `DOMAIN-SUFFIX` + 553 `DOMAIN`，零 IP 条目），是「国内域名直连」的主力。纯域名规则只做字符串匹配、不触发解析，因此无需 `no_resolve`；「已经是 IP 的连接」由下方 `geoip: CN` 兜住。
+3. **国内域名规则集（Loyalsoldier `direct.txt`）** —— 约 **11.1 万条纯域名**（`DOMAIN-SUFFIX` 约 11.06 万 + `DOMAIN` 553，**零 IP 条目**；上游每次更新都会变动，故这里用约数），是「国内域名直连」的主力。纯域名规则只做字符串匹配、不触发解析，因此无需 `no_resolve`；「已经是 IP 的连接」由下方 `geoip: CN` 兜住。
+> 另有一条 `domain_suffix: cn` —— 把整个 `.cn` TLD 再钉一次，**不依赖规则集是否加载成功**
+> （`direct.txt` 已覆盖绝大多数国内域名）。它与上面 3 条规则集合起来，构成 `rules` 的全部直连来源。
 
 **默认出口链**：未命中任何规则集的域名 → `default` 规则（`policy: Final`）→ `Final` 组唯一成员是 `Proxy` → 走代理。这类流量由**节点远程解析**，不经过本地 `dns:` 段，日志里表现为 `default → Final → Proxy`。
 
@@ -95,14 +99,14 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 
 | 子段 | 作用 | 本模板取值 |
 |---|---|---|
-| `upstreams` | 默认 DNS 的解析器组 | 仅 `Domestic-DNS`（6 个国内加密端点，全为 IP 字面量） |
-| `bootstrap` | 默认 DNS 的回退（明文 `:53`） | 3 个国内公共 DNS 的 IP，**不含 `system`** |
-| `proxy_nameservers` | 代理 DNS（解析节点 `server` 里的域名），**硬覆盖** | 6 个国内加密端点，全为 IP 字面量 |
-| `forward` | 默认 DNS 按域名选上游 | **2 条兜底**（见 2.4） |
+| `upstreams` | 默认 DNS 的解析器组 | 仅 `Domestic-DNS`（**4 个**国内加密端点 = 2 机构 × 2 协议，全为 IP 字面量） |
+| `bootstrap` | 默认 DNS 的回退（明文 `:53`） | **2 个**国内公共 DNS 的 IP（阿里 + 腾讯），**不含 `system`** |
+| `proxy_nameservers` | 代理 DNS（解析节点 `server` 里的域名），**硬覆盖** | **4 个**国内加密端点，与 `upstreams` 一致 |
+| `forward` | 默认 DNS 按域名选上游 | **1 条 catch-all 兜底**（见 2.4） |
 
 另有 `hijack_dns`（接管 `:53` 返回 Fake IP）。
 
-> 关于 `upstreams` 里被注释掉的 `Foreign-DNS` 组：它原本是 6 个境外 DoH/DoT 端点。自 v10 起已无任何引用（forward 兜底改为国内组，不再需要境外组），**按需求保留定义但整组注释**，并附了恢复说明（取消注释 + 把 forward 兜底 `value` 改回 `Foreign-DNS`）。详见第 6 节。
+> 关于 `Foreign-DNS` 组：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`v1` 里它被**整组注释**保留作 A/B 备用，**`v2` 起整段删除**。想恢复境外解析答案，需自行在 `upstreams` 里加回该组、并把 `forward` 兜底的 `value` 改过去 —— 但要注意「先有代理才敢解析」的启动期明文风险。详见第 6 节。
 
 ### 1.6 `rule_sets` 与 `no_resolve` 要求
 
@@ -146,12 +150,14 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 > - **规则集文件顶层**：Egern 原生 YAML 规则集里的 `no_resolve: true`，影响整文件。
 > - **规则集条目级**：Surge `.list` 里的 `IP-CIDR,x/y,no-resolve`——第三方 `.list` 走这一层，也是缺陷最常藏身之处（清单 16）。
 
-**③ `forward` 塌缩为两条兜底**
+**③ `forward` 塌缩为一条 catch-all 兜底**
 ```yaml
 forward:
-  - domain_regex: '.'        value: Domestic-DNS
   - domain_wildcard: '*'     value: Domestic-DNS
 ```
+> `v1` 里是两条（`domain_regex: '.'` + `domain_wildcard: '*'`）；`v2.1` 删掉了 `domain_regex` ——
+> 它与 `domain_wildcard` 语义完全重叠（任何域名两条都命中、`value` 又相同），
+> 按官方「第一条命中即决定上游」，第二条永远不会被求值。详见 2.4。
 
 ### 2.4 `forward` 塌缩的设计判据（两个反直觉事实）
 
@@ -207,9 +213,10 @@ forward:
 
 | 脚本 | 发布模板读数 | 说明 |
 |---|---|---|
+| `check_egern_dns.py` | ✅ **0 high / 2 low / 24 ok（退出码 0）** | 见下方「v3.1 判据修正」；24 这个数对应 `v2` 起的全部版本（`v1` 是 30 ok，多出的 6 项来自它比 `v2` 多的一批 DNS 端点路由规则） |
 | `audit_routing_coverage.py` | ✅ 15/15 国内探针 `DIRECT` | 分流正确性不受脱敏影响 |
 | `audit_dns_forward.py --drill` | ✅ 通过（退出码 0） | `forward` value 单值、订阅耦合 0 |
-| `check_egern_dns.py` | ✅ **0 high / 2 low / 30 ok（退出码 0）** | 见下方「v3.1 判据修正」 |
+| `audit_region_filters.py` | ✅ 6 个地区组关键词全部同步（退出码 0） | 负向断言与地区组 filter 逐字一致 |
 
 **v3.1 判据修正（2026-09-20）** —— 曾有一段时间发布模板**过不了** `check_egern_dns.py`：
 
@@ -274,15 +281,17 @@ forward:
 
 ## 4. 审计清单（18 项）
 
+> 📌 本节是 [`docs/03-加固清单-18项.md`](../docs/03-加固清单-18项.md) 的摘要。**逐条判据与严重度的权威版本以 `docs/03` 为准** —— 要改清单请改那一份，本节跟着同步。
+
 > 全部自动化：`check_egern_dns.py` 覆盖 1–15；`audit_ruleset_noresolve.py` 覆盖 16；`audit_routing_coverage.py` 覆盖 17；`audit_dns_forward.py` 覆盖 18。
 
 | # | 检查 | 判据 | 严重度 |
 |---|---|---|---|
 | 1 | `upstreams` / `proxy_nameservers` 端点是否为 IP 字面量 | 出现主机名端点 → 必被 bootstrap 明文解析一次 | 高（境外）/ 低（国内） |
 | 2 | 节点 `server` 是域名时，`forward` 是否接住 | 没接住 → 节点域名明文暴露 | 高 |
-| 2b | `proxy_nameservers` 是否存在 | 它是硬覆盖，一设就绕过 forward；推荐「不设 + forward 显式覆盖」 | 中 |
+| 2b | `proxy_nameservers` 是否存在 | 它是**硬覆盖**：一设就跳过 `forward`、强制直连。**两种写法都成立，但必须二选一、不要叠加** —— ① **不设置**（代理 DNS 与默认 DNS 共用 `forward`，靠兜底接住节点域名）；② **设置**（把「未命中 → 回退 `bootstrap`」这条分支从结构上消掉，且强制直连 ⇒ 不依赖代理就绪）。**本模板采用 ②** | 中 |
 | 3 | DNS 端点是否全为 IP 字面量（无需在 `rules` 钉路由） | 主机名端点才需在 `rules` 显式路由（否则落 `default` 错判出口）；**本模板全部 IP 字面量，故 `rules` 中已无 DNS 端点路由规则**，此条由清单 1 覆盖 | 高（仅在你自己改用主机名端点时适用） |
-| 4 | `forward` 是否有「直连可达」兜底 | 兜底组内端点全为 IP 字面量 + 至少一个在 `rules` 判给 `DIRECT`；`domain_wildcard:'*'` 和 `domain_regex:'.'` 都算兜底，推荐两条都写 | 高 |
+| 4 | `forward` 是否有「直连可达」兜底 | 兜底组端点全为 IP 字面量 + 满足**判据 A 或判据 B**：**A** 至少一个在 `rules` 里被判给 `DIRECT`；**B** 至少一个是**国内知名解析器 IP**（`223.5.5.5` / `223.6.6.6` / `119.29.29.29` / `1.12.12.12` / `120.53.53.53` …）—— **本模板走判据 B**。写法要认全：`domain_wildcard:'*'` **和** `domain_regex:'.'` 都算兜底 | 高 |
 | 5 | `geoip`/`ip_cidr`/`ip_cidr6`/`asn` 是否带 `no_resolve` | 不加则触发解析 | 高 |
 | 6 | 规则引用的策略名能否解析 | 笔误（如「负载均衡」）会成死规则 | 高 |
 | 7 | 硬编码 DoH IP 是否有启用规则 → 代理 | `hijack_dns` 只覆盖 `:53`，App 自带 DoH on `:443` 会绕过 | 中 |
@@ -306,12 +315,14 @@ forward:
 5. `bootstrap` 显式列 2 个以上国内公共 DNS IP，且不含 `system`。
 6. ⭐⭐ 分流仍正确：国内域名仍判 `DIRECT`（15 个国内探针全绿）。**这是第 3 条的代价，必须成对交付。**
 
-**三个脚本的定位（为什么不合成一个）**
+**五个脚本的定位（为什么不合成一个）**
 | 脚本 | 看哪一层 | 关键点 |
 |---|---|---|
-| `check_egern_dns.py` | profile 文本 | 只能验证「你自己编码进去的假设」 |
-| `audit_ruleset_noresolve.py` | 被引用的规则集文件 | 缺陷不在 profile 里，不下载就永远看不见 |
-| `audit_routing_coverage.py` | 域名 → 命中规则 → 策略 | 验证「防泄露」没把「分流」一起干掉 |
+| `check_egern_dns.py` | **profile 文本** | 能验证的只有「你自己编码进去的假设」 |
+| `audit_ruleset_noresolve.py` | **被引用的规则集文件** | 缺陷不在 profile 里 —— 不下载就永远看不见 |
+| `audit_routing_coverage.py` | **域名 → 命中规则 → 策略** | 验证「防泄露」没把「分流」一起干掉 |
+| `audit_dns_forward.py` | **`forward` 的结构**（单值性 / 订阅耦合 / 换订阅演练） | 验证「换订阅后还能不能防泄露」 |
+| `audit_region_filters.py` | **地区组 filter 的「两份拷贝」** | 负向断言（「排除以上全部」）必须逐字重抄关键词，Egern 不支持 `filter` 引用 ⇒ 只能靠脚本守同步 |
 
 ---
 
@@ -330,10 +341,10 @@ forward:
 
 ## 6. 已知代价与取舍
 
-- **`Foreign-DNS` 整组注释（保留不删）**：v10 起它已无引用（forward 兜底改国内组后不再需要境外组）。按需求保留定义但注释，并附恢复说明——取消注释 + 把 forward 兜底 `value` 改回 `Foreign-DNS`。风险提醒：若恢复境外组作兜底且代理未就绪，会掉进明文 `:53`。这是「保留可回退性」与「避免误用」的折中。
+- **`Foreign-DNS` 已删除**：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`v1` 曾**整组注释**保留为 A/B 备用，**`v2` 起整段删除**。要恢复境外解析答案，需自行在 `upstreams` 里加回该组。风险提醒：若用它作兜底且代理未就绪，会掉进明文 `:53`。
 - **七个版本 × 双形态**：`profiles/v2.4.yaml`（**推荐**，带注释，每段附原理）+ `profiles/v2.4.min.yaml`（纯配置，结构逐项一致，仅去注释）；`profiles/v2.3.yaml` / `v2.3.min.yaml` 保留以备对照（与 v2.4 只差 `rule_set` 的 `update_interval`）；`profiles/v2.2.yaml` / `v2.2.min.yaml` 保留以备对照（与 v2.3 只差 4 处修正）；`profiles/v2.1.yaml` / `v2.1.min.yaml` 保留以备对照（与 v2.2 只差机场槽位：4 个 vs 2 个）；`profiles/v2.yaml` / `v2.min.yaml` 原样保留（与 v2.1 只差 52 行「值恰好等于官方默认值」的冗余行，写与不写是同一份配置）；`profiles/v1.yaml` / `profiles/v1.min.yaml` 为旧版，保留不删；`profiles/v0.yaml` / `v0.min.yaml` 为**极简裁剪版**，只留 `Proxy` / `AI` / `AD` / `Final` 四个组与 9 条规则（v1/v2/v2.1 为 29 组 / 24 条，v2.2/v2.3/v2.4 为 27 组 / 24 条），`dns` 段与 v2.1 逐字相同。**v2.4 与 v2.3 的差别只在 `rules` 段里每条 `rule_set` 多一行 `update_interval: 86400`（21 条全补；规则集按天刷新，不再停在首次下载的版本）**，`dns` 段 / 规则内容与顺序 / `policy_groups` 段逐字相同。**v2.3 与 v2.2 的差别只在 `policy_groups` 段、且只有 5 个组（4 处修正）**：① `MAX` 的 `filter` 换成 `(?<![\d.])0\.\d*[1-9]`（收录所有倍率 < 1 的节点；原写法 `0\.(?:01|1)` 既误收 `10.1 倍率`、又漏收 `0.5` / `0.99`），② `Korea` 的上游去掉冗余的 `Smart`（v2.2 起 `Smart ⊂ (Airport-A ∪ Airport-B)`），③ `Smart` 补上 `flatten: true`（候选从「A 组 / B 组」两个单位变成全部具体节点），④ `ChatGPT` / `Gemini` 从**空组**改为 `[Proxy]` + `flatten: true`（原先是 `policies: []` 而规则 4/5 直接指向它们 ⇒ 导入即静默断流；不加 flatten 时 fallback 只有「Proxy」一个候选，等于没有故障转移），`dns` 段与规则逐行相同。**v2.2 与 v2.1 的差别只在 `policy_groups` 段**：机场订阅槽位 4 → 2（删 `Airport-C` / `Airport-Free`），`MAX` 组不再自带订阅 URL、改为「带节点筛选的 `Smart`」（同上游 + 一个 `filter`），`dns` 段与规则逐行相同。**v1 与 v2.1 的差别只在 `dns` 段**，其余顶层段逐字相同——v2.1 把该段从 40 行压到 22 行（删掉无引用点的 `hosts:` 段、与 catch-all 重叠的第二条兜底、并把 6 端点收敛为 4），防泄露能力经审计脚本实测逐项等价。v0 另有两处**只属于 v0** 的调整：`Final` 组加 `hidden: true`（它只有一个子策略，没有手动切换的意义）、`AD` 组去掉 `DIRECT` 子策略只留 `REJECT`（想临时放行就在 `rules` 里加一条更靠前的 `domain` 规则指向 `DIRECT`），**不同步到其他版本**。⚠️ 文件名里的 v0/v1/v2/v2.1/v2.2/v2.3/v2.4 是**文件版本**，与 `docs/06` 的「配置迭代谱系 v1~v10」是两个维度。
 - **图标整合进本仓库**：26 个图标源自已整合进 `icons/`，模板不再跨项目引用图标地址。来源归属见 README「图标与许可」一节（公开仓库署名）。
-- **删除虚拟节点（不保留引用）**：模板 `proxies` 为空，占位节点名引用已从 `policy_groups` 剥除（组间引用保留，暂空组留 `[]`）。不保留虚假结构，由你自行填写。
+- **删除虚拟节点（不保留引用）**：模板 `proxies` 为空，占位节点名引用已从 `policy_groups` 剥除（组间引用保留；`v2.3` 起**已无空组**）。不保留虚假结构，由你自行填写。
 - **与订阅解耦**：forward 不写任何节点 / 订阅域名，换订阅无需改动 DNS 段（清单 18 验证订阅耦合 4 → 0）。
 - **审计脚本报的 2 条 `LOW`（刻意为之，不是缺陷）**：`check_egern_dns.py` 对本模板的读数是 `0 high, 2 low`。两条都属「安全性 vs 可用性」的自觉取舍，不是配置错误：
   - **① 设置了 `proxy_nameservers`** —— 它成为代理侧解析的唯一出口（绕过 `forward`、强制直连）。这是必须的：节点域名要在代理起来之前解析，只能走直连侧。
@@ -365,7 +376,7 @@ forward:
 
 - **定位**：审计并加固 Egern 配置（Profile.yaml）的 DNS 泄露面与分流覆盖。
 - **触发词**：Egern 配置 / 防 DNS 泄露 / `proxy_nameservers` / `bootstrap` 泄露 / 节点域名明文解析 等。
-- **脚本清单**（8 个，各自看不同层）：
+- **脚本清单**（9 个，各自看不同层）：
   | 脚本 | 层级 | 覆盖清单 |
   |---|---|---|
   | `check_egern_dns.py` | profile 文本 | 1–15 |
@@ -436,7 +447,7 @@ S="skill/scripts"
 
 ## 10. 常见问题（扩展版）
 
-**Q1：为什么 forward 只留两条兜底，不写节点域名？**
+**Q1：为什么 forward 只留一条 catch-all 兜底，不写节点域名？**
 因为配了 `proxy_nameservers` 后代理 DNS 跳过 forward（节点域名根本不走这里），且兜底 `value` 为单值时顺序与域名清单都无意义。写节点域名只会随订阅变化变成死代码。详见 2.4 / 清单 18。
 
 **Q2：兜底指向国内组，会不会让境外网站拿到污染答案？**
@@ -455,8 +466,8 @@ S="skill/scripts"
 
 > **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **21 个**远程规则集中，**11 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads / **jinx white-guard** / **jinx ads**，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
 
-**Q5：`Foreign-DNS` 被注释了，我还能用吗？**
-能。取消注释，并把 forward 兜底 `value` 改回 `Foreign-DNS` 即可。但注意：若它作兜底且代理未就绪，会掉进明文 `:53`。v10 默认用国内组兜底，正是为了避免这条路径。
+**Q5：`Foreign-DNS` 组去哪了？我还能用吗？**
+`v2` 起已整段删除（迭代 v10 起它就无引用，`v1` 曾注释保留为 A/B 备用）。想用境外解析答案，需自行在 `upstreams` 里加回该组（6 个境外 DoH/DoT 端点），并把 forward 兜底 `value` 改过去。但注意：若它作兜底且代理未就绪，会掉进明文 `:53` —— 迭代 v10 默认用国内组兜底正是为了避免这条路径。
 
 **Q6：模板为什么没有示例节点？**
 避免占位节点在分流组里留下悬空引用（过度设计）。你填真实节点后，再把对应组的 `policies` 填上节点名 / 订阅组名。
