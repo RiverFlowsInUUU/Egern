@@ -18,9 +18,8 @@
   <a href="#-防泄露原理">防泄露原理</a> •
   <a href="#-分流组结构">分流组结构</a> •
   <a href="#-规则优先级">规则优先级</a> •
-  <a href="#-审计读数">审计读数</a> •
-  <a href="#️-注意事项">注意事项</a> •
-  <a href="CHANGELOG.md">更新日志</a>
+  <a href="#-规则来源">规则来源</a> •
+  <a href="#-更多文档">更多文档</a>
 </p>
 
 ---
@@ -51,7 +50,7 @@
 egern-anti-dns-leak/
 ├── profiles/            # 14 份配置（2 个可选版本 + 5 份旧版，各有带注释 / 纯配置两份）
 ├── icons/               # 分流组图标（已内置，不跨项目引用）
-├── docs/                # 7 篇专题（原理 / 清单 / 谱系 / 版本沿革）
+├── docs/                # 10 篇专题（原理 / 清单 / 谱系 / 版本沿革 / 审计读数 / 注意事项 等）
 ├── DetailsReadme/       # 完整技术文档
 ├── CHANGELOG.md         # 更新日志（按时间倒序）
 └── skill/               # 方法论（SKILL.md + reference/）+ 审计脚本 + 回归测试
@@ -198,24 +197,6 @@ egern-anti-dns-leak/
 
 ---
 
-## ✅ 审计读数
-
-本仓库自带审计脚本，可直接对模板运行（[`skill/scripts/`](skill/scripts/)）：
-
-| 脚本 | 读数 |
-|:----:|:----:|
-| `check_egern_dns.py` | ✅ **0 high**（退出码 0），另有 2 条 `LOW` |
-| `audit_ruleset_noresolve.py` | ✅ 全部通过（v2.x / v1 各 21 个规则集 · v0 为 6 个） |
-| `audit_routing_coverage.py` | ✅ 15/15 国内探针命中 `DIRECT` |
-| `audit_dns_forward.py` | ✅ 通过（带 / 不带 `--drill` 都通过） |
-| `audit_region_filters.py` | ✅ 6 个地区组的关键词全部同步进 `Other Regions` 的负向断言（v0 无此结构，自动跳过） |
-
-**那 2 条 `LOW` 不是缺陷，是设计取舍** —— ① 设置了 `proxy_nameservers`（它成为代理侧解析的唯一出口）；② 兜底指向国内组（需要本地解析的境外域名会拿到国内答案，实际影响面仅限 `DIRECT` 域名）。详见 [`DetailsReadme` §6](DetailsReadme/DetailsReadme.md#6-已知代价与取舍)。
-
-**回归测试**：`bash skill/tests/run.sh` —— 两阶段共 24 个断言（阶段 1：5 个 fixture × 2 个脚本 = 10；阶段 2：14 份 profile 的地区 filter 同步 = 14），退出码非 0 即失败。
-
----
-
 ## 📚 规则来源
 
 | 来源 | 用在哪 |
@@ -229,39 +210,17 @@ egern-anti-dns-leak/
 
 ---
 
-## ⚠️ 注意事项
-
-| 项目 | 说明 |
-|:----:|:-----|
-| 🧩 **`v0` 的 `Proxy` 必须填** | 它没有 `Airport-*` 订阅槽位，`Proxy` 空着就**所有走代理的流量都不通**（其余版本填订阅即可） |
-| 🔄 **规则集自动更新** | `v2.4` 起 21 条 `rule_set` 均带 `update_interval: 86400`（按天刷新）。`v2.3` 及更早版本**缺此字段**，规则集可能长期停在首次下载的版本 —— 上游新收录的域名会一直命不中 |
-| 🧪 **全部本地完成** | 本仓库**刻意不挂 CI / 任何自动化**（理由见 [`skill/README.md`](skill/README.md)）—— 改完 profile 本地跑一遍上面那批脚本即可 |
-
----
-
 ## 📖 更多文档
 
 | 文档 | 内容 |
 |:----:|:-----|
+| [`docs/08-审计读数.md`](docs/08-审计读数.md) | 5 个审计脚本的读数 · 2 条 `LOW` 的含义 · 回归测试 |
+| [`docs/09-注意事项.md`](docs/09-注意事项.md) | 使用前必看：`v0` 的 `Proxy` · 规则集刷新 · 刻意不挂 CI |
+| [`docs/10-图标与许可.md`](docs/10-图标与许可.md) | 图标来源 · MIT 许可 · 第三方版权 |
+| [`CHANGELOG.md`](CHANGELOG.md) | 更新日志（按时间倒序，遵循 Keep a Changelog） |
 | [`DetailsReadme/`](DetailsReadme/) | 逐段详解 · 原理推导 · v1–v10 谱系 · 18 项审计清单 · 规则集开销实测 · 已知取舍 · FAQ |
-| [`docs/`](docs/) | 7 篇专题：DNS 怎么工作 / 为什么泄露 / 加固清单 / 逐段讲解 / no_resolve 成对交付 / 实测谱系 / **文件版本沿革** |
-| [`CHANGELOG.md`](CHANGELOG.md) | 模板的显著变动记录（按时间倒序） |
+| [`docs/`](docs/) | 其余 7 篇专题：DNS 怎么工作 / 为什么泄露 / 加固清单 / 逐段讲解 / no_resolve 成对交付 / 实测谱系 / 文件版本沿革 |
 | [`skill/`](skill/) | 审计脚本、回归测试与方法论 |
-
----
-
-## 📝 更新日志
-
-模板的显著变动记录在 **[`CHANGELOG.md`](CHANGELOG.md)**（按时间倒序，遵循 Keep a Changelog）。
-配置文件版本的说明见上方 [📦 两个版本](#-两个版本)。
-
----
-
-## 🎨 图标与许可
-
-- 分流组图标整合自 [RiverFlowsInUUU/Rule](https://github.com/RiverFlowsInUUU/Rule)、[jnlaoshu/MySelf](https://github.com/jnlaoshu/MySelf)、[Koolson/Qure](https://github.com/Koolson/Qure)，已统一存入本仓库 `icons/`，**不跨项目引用任何图标地址**。
-- 本项目采用 **MIT** 许可证，见 [LICENSE](LICENSE)。
-- 第三方规则集（blackmatrix7 / ACL4SSR / AWAvenue / jinx-ads-rules / Qure 等）版权归其原作者。
 
 ---
 
