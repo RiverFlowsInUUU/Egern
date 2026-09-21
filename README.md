@@ -52,7 +52,7 @@ egern-anti-dns-leak/
 ├── docs/                # 6 篇专题（原理 / 清单 / 谱系）
 ├── DetailsReadme/       # 完整技术文档
 ├── CHANGELOG.md         # 更新日志（按时间倒序）
-└── skill/               # 审计脚本 + 回归测试
+└── skill/               # 方法论（SKILL.md + reference/）+ 审计脚本 + 回归测试
 ```
 
 ---

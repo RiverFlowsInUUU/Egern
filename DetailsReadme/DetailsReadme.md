@@ -430,7 +430,7 @@ S="skill/scripts"
 > 📌 **全部验证都在本地完成 —— 本仓库刻意不挂 CI / 任何自动化**（2026-09-21 决定）。
 > 这是个人模板仓库，不会有外部贡献者，"自动验 PR"没有服务对象，而本地跑一遍只要几十秒。
 > 上表那批本地命令已覆盖自动化做过的全部断言，**功能上没有任何损失**。
-> 详细说明见 [`skill/SKILL.md`](../skill/SKILL.md)「公开模板仓库」一节。
+> 详细说明见 [`skill/reference/public-repo.md`](../skill/reference/public-repo.md)。
 
 ---
 

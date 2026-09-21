@@ -15,7 +15,13 @@ cp -r skill ~/.workbuddy/skills/egern-profile-dns-hardening
 
 | 文件 | 作用 |
 |---|---|
-| `SKILL.md` | 方法论主体：Egern 双轨 DNS 模型、**18 项审计清单**、加固模板、**18 个已踩过的坑**、验收 7 条、官方文档入口 |
+| `SKILL.md` | **主干**（326 行）：Egern 双轨 DNS 模型、18 项审计清单、加固模板、坑索引、验收 7 条、官方文档入口 |
+| `reference/hardening-template.md` | 加固模板完整 YAML（含逐行理由） |
+| `reference/pitfalls.md` | **18 个已踩过的坑** —— 事故复盘全文 |
+| `reference/leak-localization.md` | 定位「泄露到运营商」的网络侧实测流程 |
+| `reference/ruleset-weight.md` | 规则集内存 / 耗时实测 |
+| `reference/checker.md` | 核对器命令 + 审计判据演进史 + 实测基准表 |
+| `reference/public-repo.md` | 公开模板仓库的交付物清单与维护方式 |
 | `scripts/check_egern_dns.py` | **profile 层审计**（清单 1–15）。检查端点是否 IP 字面量、兜底组是否"直连可达"、IP 规则是否带 `no_resolve`、策略名能否解析、死规则等 |
 | `scripts/audit_ruleset_noresolve.py` | **规则集层审计**（清单 16）。下载全部被引用的远程规则集，数出"缺 `no-resolve` 的 IP 条目" |
 | `scripts/audit_routing_coverage.py` | **分流覆盖审计**（清单 17）。域名 → 命中规则 → 策略；15 个**非 `.cn`** 国内探针 + 7 个境外探针 |
@@ -25,6 +31,13 @@ cp -r skill ~/.workbuddy/skills/egern-profile-dns-hardening
 | `scripts/probe_dns_endpoints.py` | 逐个实测加密 DNS 端点（DoH 线格式 / DoT 853 握手 + 证书） |
 | `scripts/probe_doh.py` | 只测 DoH 线格式（判端点死活**只能**用这个，不能用 JSON API） |
 | `scripts/weigh_ruleset.py` | 规则集"重量"：构成 / 冗余 / 深度 / 耗时 / 覆盖对比（评估大规则集的内存与加载代价） |
+
+> 📐 **为什么拆**：Anthropic 官方 skill 撰写规范要求 `SKILL.md` 正文 **< 500 行**
+> （原文：*Keep SKILL.md body under 500 lines for optimal performance. If your content exceeds
+> this, split it into separate files*），超出部分按 **progressive disclosure** 移入 `reference/`。
+> 拆前 705 行 ⇒ 拆后主干 326 行 + 6 个引用文件。
+> 引用只嵌**一层**（`SKILL.md` → `reference/*.md`），超过 100 行的引用文件顶部带目录。
+> ⚠️ `reference/` 与 `scripts/` / `tests/` 同级，都在 `skill/` 目录内 ⇒ `cp -r skill ...` 仍然一次拷全。
 
 ## 依赖
 

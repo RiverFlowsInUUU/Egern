@@ -163,7 +163,7 @@ comm -23 dA.txt dB.txt | wc -l    # 期望 0
 > 判据是**数域名条目**，不是看规则集名字。
 > 三个脚本里，`check_egern_dns.py` 和 `audit_ruleset_noresolve.py` 全绿**不代表配置可用** —— 它们不检查分流。
 
-这条规则现在写进了 `skill/SKILL.md` 的验收标准第 6 条。
+这条规则现在写进了 `skill/SKILL.md` 的「加固结束的验收标准」第 6 条。
 
 ---
 
