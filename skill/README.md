@@ -57,7 +57,7 @@ bash ./skill/tests/run.sh                                       # 回归测试�
 > `tests/run.sh` 是**防退化守卫**，分两阶段：
 > **阶段 1** 把 `tests/` 下的 fixture 同时喂给 `check_egern_dns.py` 与 `audit_dns_forward.py`
 > （5 × 2 = 10 断言），确保两个脚本对同一份配置给出一致结论；
-> **阶段 2** 对仓库里全部 12 份 `profiles/*.yaml` 跑 `audit_region_filters.py`（12 断言），
+> **阶段 2** 对仓库里全部 14 份 `profiles/*.yaml` 跑 `audit_region_filters.py`（14 断言），
 > 守住地区组关键词与 `Other Regions` 负向断言的同步。
 > ⚠️ 阶段 2 的断言对象必须是**真实 profile** —— `tests/` 的 fixture 是 DNS 面的合成配置、
 > 没有地区组，喂给 `audit_region_filters.py` 只会走"无需校验"分支（看着绿，其实没测）。
