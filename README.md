@@ -226,7 +226,7 @@ egern-anti-dns-leak/
 | 🔗 **节点必填** | `proxies` 是空 `[]`，不填则代理不通 |
 | 🎯 **分流组必填** | 空的 `policies: []` 要填节点名，否则 `Final → Proxy` 是断的 |
 | 🧩 **`v0` 尤其注意** | 它只留 4 个组，`Proxy` 为空时**所有走代理的流量都不通** |
-| 📄 **CI 文件** | `.github/workflows/` 需要 PAT 带 `workflow` scope，否则推不上去（GitHub 返回 404 而非 403） |
+| 🧪 **自查方式** | 本仓库**刻意不挂 CI**（理由见 [`skill/README.md`](skill/README.md)）。改完 profile 请本地跑 `bash skill/tests/run.sh` + 4 个审计脚本 |
 | 🔀 **命名歧义** | 文件名 `v0` / `v1` / `v2` / `v2.1` ≠ `docs/06` 的迭代谱系 `v1~v10` |
 
 ---

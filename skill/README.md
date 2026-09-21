@@ -53,13 +53,16 @@ bash ./skill/tests/run.sh                                       # 回归测试�
 规则集缓存写在系统临时目录（`%TEMP%\egern-ruleset-cache` / `/tmp/egern-ruleset-cache`），约 5 MB。
 
 > `tests/run.sh` 是**防退化守卫**：它把 `tests/` 下的 fixture 同时喂给 `check_egern_dns.py` 与
-> `audit_dns_forward.py`，确保两个脚本对同一份配置给出一致结论。CI：`.github/workflows/audit-regression.yml`。
+> `audit_dns_forward.py`，确保两个脚本对同一份配置给出一致结论。**改完脚本或 profile 后手动跑一次。**
 > 共享逻辑（`hostpart` / `ip_literal` / `DOMESTIC_RESOLVER_IPS`）集中在 `scripts/_egern_common.py`，
 > 避免"同一判据两份拷贝、改一处漏另一处"。两个脚本的运行目录里必须有这个文件。
 >
-> ⚠️ 发布 `.github/workflows/` 下的文件需要 PAT 具备 **`workflow` scope**。只有 `public_repo` 时
-> GitHub 会返回 **404**（不是 403），`outputs/_publish_to_github.py` 会静默摘掉 CI 文件继续推送 ——
-> 于是文档写着「CI 见 …」而仓库里根本没有。推完务必用 `git ls-files .github` 核一遍。
+> 📌 **为什么本仓库不挂 GitHub Actions**：曾经加过 `.github/workflows/audit-regression.yml`，
+> 后来**主动撤掉**。两个原因：
+> ① 这是个人模板仓库，不会有外部贡献者，"自动验 PR"的价值接近于零，而本地跑一次只要几十秒；
+> ② **`pull_request` 触发是已知的攻击面** —— 陌生人对公开仓库提 PR、在 PR 里改 workflow 文件，
+> runner 就可能被用来跑他的代码（GitHub 上被滥用挖矿的经典手法）。**少一个面就少一份事。**
+> 全部验证用上面的本地命令即可完整复现，功能上没有任何损失。
 
 ## 三条必须记住的判据
 

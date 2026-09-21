@@ -570,7 +570,7 @@ v10.2 起（2026-09-20，二次核查报告触发）：⑩ **「靠注释提醒�
    收 `DOMESTIC_RESOLVER_IPS` / `hostpart` / `ip_literal`；两个脚本都 import 它。
    **判据可以有两处调用点，但实现只能有一处。**
 2. ⭐⭐ **fixture 必须喂给"所有"脚本，而不是常跑的那一个。** 新增 `scripts/../tests/run.sh`
-   （5 fixture × 2 脚本 = 10 断言）+ CI `.github/workflows/audit-regression.yml`。
+   （5 fixture × 2 脚本 = 10 断言），**改脚本 / 改 profile 后手动跑一次**。
    经验：**"只差一点就能抓到"的 bug，恰恰是因为守卫只覆盖了一半**。加守卫时要问："这条断言有没有在
    **每一个**消费方上跑过？"
 3. ⭐ **文档里给的命令必须逐条照着执行一遍。** 这次崩溃的命令就印在 README / docs/04 / skill/README 里。
@@ -593,6 +593,8 @@ v10.3 起（2026-09-20，三次核查报告触发）：⑪ **"收编共用逻辑
    `.github/workflows/` 从未上传：PAT 缺 `workflow` scope 时 GitHub 对含 workflow 的 tree 创建
    返回 **404**，发布脚本据此静默摘掉 CI 文件继续推。**发布后要用 `git ls-files` 核对交付物，
    而不是相信发布脚本的 commit message。**
+   （后续：该 CI 已**主动撤掉**，理由见「公开模板仓库」一节。但这条教训与 CI 无关 ——
+   换任何一个"声称已交付 X"的场合都成立。）
 
 v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随配置演进失效 —— 改配置后必须重跑判据，且改判据要用"双向回归"守住收紧面。**
 本次事故：v10 删掉了 15 条 DNS 端点路由规则（依据是 `upstreams` 全是 IP 字面量 ⇒ 不需要路由），**我验证了配置侧、没验证脚本侧** —— 而 `group_reach` 的判据有一半是「至少一个端点判给 `DIRECT`」。删掉那些规则 ⇒ 这半句永远不成立 ⇒ 插件把**自有模板**误判 `3 high`、退出码 1。报告结论准确。
@@ -660,12 +662,24 @@ skill/                                       # 本 skill（含全部脚本）
 发布用 `outputs/_publish_to_github.py`（Git Data API 单次提交；空仓库需先落初始化提交，
 否则 `POST /git/blobs` 报 `409 Git Repository is empty`）。方法论见 skill `github-publish-sanitized-repo`。
 
-⚠️ **发布 CI 文件需要 PAT 具备 `workflow` scope。** 只有 `public_repo` 时，GitHub 对
-「包含 `.github/workflows/` 的 tree 创建」返回 **404**（不是 403 —— 它故意不暴露存在性）。
-`_publish_to_github.py` 会把 workflow 文件摘掉、照常推送其余文件 —— 于是 README 写着
-「CI 见 …」而仓库里根本没有 CI（三次核查报告 P1 的真实成因）。
-**发布后必须核对交付物，而不是相信脚本的 commit message**：
-`git ls-files | grep '^\.github/'` 应至少列出 1 个文件。
+📌 **本仓库刻意不挂 GitHub Actions（2026-09-21 决定）。**
+曾经加过 `.github/workflows/audit-regression.yml`，后来**主动撤掉**，两个原因：
+1. **收益接近于零**：这是个人模板仓库，不会有外部贡献者，"自动验 PR"没有服务对象；
+   而本地跑一次 `bash skill/tests/run.sh` + 4 个审计脚本只要几十秒。
+2. **`pull_request` 触发是已知攻击面**：陌生人对公开仓库提 PR、在 PR 里改 workflow 文件，
+   runner 就可能被用来跑他的代码 —— 这是 GitHub 上被滥用挖矿的经典手法
+   （2021 年那批事故里 95 个仓库中招）。GitHub 对首次贡献者默认要维护者**手动批准**才跑，
+   但**没必要留这个面**。
+
+⇒ 全部验证用本地命令复现：`bash skill/tests/run.sh` + `check_egern_dns.py` /
+`audit_dns_forward.py` / `audit_ruleset_noresolve.py` / `audit_routing_coverage.py`。
+功能上没有任何损失。
+
+> 历史备注（若将来又想加 CI）：**发布 `.github/workflows/` 需要 PAT 具备 `workflow` scope**。
+> 只有 `public_repo` 时 GitHub 对「含 workflow 的 tree 创建」返回 **404**（不是 403 ——
+> 它故意不暴露存在性），`_publish_to_github.py` 会静默摘掉该文件、照常推送其余文件。
+> **发布后必须核对交付物，而不是相信脚本的 commit message**：
+> `git ls-files | grep '^\.github/'` 应至少列出 1 个文件。
 
 **脱敏清单（这五类必须洗）**：节点 server/凭据/sni/reality 公钥 → 占位；
 机场订阅 URL（含 token）→ 占位；`mitm.ca_p12` + `ca_passphrase`（个人 CA 私钥）→ **注释掉**；
