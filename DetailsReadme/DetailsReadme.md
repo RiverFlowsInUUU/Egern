@@ -66,11 +66,38 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 要点：
 - **组与组之间可以互相引用**（例如 `Final` 的成员是 `Proxy`，App 组的成员里混入地区组）。这种引用关系保留，是模板的正常结构。
 - **`v2.3` 起已无空组**：`ChatGPT` / `Gemini` 曾是 `policies: []` 的空组，而规则直接指向它们
-  ⇒ **导入即静默断流**；现已填成 `[Proxy]` + `flatten: true`。
-  ⚠️ 这两组是 `fallback`（故障转移）：`flatten` 让候选从「`Proxy` 一个组单位」变成全部具体节点，
-  等于给 `Proxy` 补一层**节点级故障转移**；不加 `flatten` 时只有 1 个候选、没有转移能力
-  （详见 `docs/04-模板逐段讲解.md` §4）。
+  ⇒ **导入即静默断流**；现已填成 `[Proxy]` + `flatten: true`（`flatten` 在这里起什么作用，
+  见下方「组清单与要点」；逐段讲解见 `docs/04-模板逐段讲解.md` §4）。
 - **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
+
+#### 组清单与要点（`v2.4`）
+
+**节点来源**（2 个订阅槽位）：`Airport-A` / `Airport-B`（后者另带一条 `urls_disabled` 示例）。
+`v2.1` 及更早为 4 个槽位（多出 `Airport-C` / `Airport-Free`）—— `v2.2` 精简掉，选路能力不变。
+
+**`flatten: true`** —— 把子策略组**展开成全部具体节点**，而不是当成一个「组」单位。
+以 `Smart` 为例：不加时候选是「`Airport-A` 组」「`Airport-B` 组」两个单位（两级选优），
+加上后才是订阅里的**全部具体节点**（一级选优）。官方「通用字段」明确它在
+`select` / `auto_test` / `smart` / `fallback` / `load_balance` 五种基础类型上通用。
+本模板的 `Smart` / `MAX` / `ChatGPT` / `Gemini` 与全部地区组都用了它。
+
+**`ChatGPT` / `Gemini` 为什么必须配 `flatten`** —— 它们是 `fallback`，语义是**按顺序取第一个可用**。
+不加 `flatten` 时候选只有「`Proxy`」**一个**，等于没有故障转移能力，且 `Proxy` 一挂整组就断；
+加上后 `Proxy` 展开成全部具体节点，`fallback` 在节点级依次尝试
+⇒ 效果是给 `Proxy` 补一层**节点级故障转移**。
+
+**`MAX`** —— 「带节点筛选的 `Smart`」：上游同 `Smart`，额外用
+`filter: (?<![\d.])0\.\d*[1-9]` 只留**倍率 < 1** 的节点。
+
+**地区组** —— 「按正则把节点归类」是 **`filter`** 干的，不是 `smart` 本身；
+`smart` 只负责在筛出来的节点里选最优。`Other Regions` 的负向断言把其余 6 个地区组的
+关键词**逐字抄了一遍** —— 改任何一组的关键词都要同步改它，
+用 [`skill/scripts/audit_region_filters.py`](../skill/scripts/audit_region_filters.py) 校验（漏改会被它拦下）。
+
+**服务组**（默认策略与承接的规则集）见 [`README.md`「分流组结构」](../README.md#-分流组结构)。
+
+**`v0` 的两处专属调整**（只属于它，不同步其他版本）：`AD` 组**只有 `REJECT`**（没有 `DIRECT` 兜底）、
+`Final` 组**被隐藏**（只有一个子策略，没有手动切换的意义）。
 
 ### 1.4 `rules` —— 匹配表与直连规则集
 

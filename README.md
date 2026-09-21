@@ -8,7 +8,7 @@
 
 <p align="center">
   <b>面向 Egern 的防 DNS 泄露配置模板</b><br>
-  <i>不绑定任何节点与订阅 —— 只做一件事：消除 DNS 泄露面</i>
+  <i>不绑定节点与订阅。只做一件事：消除 DNS 泄露面。</i>
 </p>
 
 <p align="center">
@@ -27,10 +27,10 @@
 ## 🚀 快速开始
 
 ```
-1. 挑一份配置   →  profiles/v2.4.yaml（推荐）
-2. 填订阅       →  Airport-A / Airport-B 的 urls
-3. 填节点       →  proxies 段（可选）
-4. 导入 Egern   →  完成
+1. 挑配置   →  profiles/v2.4.yaml（推荐）
+2. 填订阅   →  Airport-A / Airport-B 的 urls
+3. 填节点   →  proxies 段（可选）
+4. 导入     →  Egern
 ```
 
 | 位置 | 现状 | 填什么 | 必填 |
@@ -38,9 +38,9 @@
 | `Airport-A` / `Airport-B` 的 `urls` | `sub.example.com` 占位 | 你的订阅地址 | ✅ |
 | `proxies` | `[]` | 你的自建节点 | ⬜ 可选 |
 
-> 填完订阅即可直接导入，无需其他改动。
->
-> 只要防泄露、不要分流？改用 **`profiles/v0.yaml`（极简懒人版）** —— 它没有订阅槽位，需要自己填 `Proxy` 节点。
+填完订阅即可导入，无需其他改动。
+
+只要防泄露、不要分流？改用 `profiles/v0.yaml`（极简懒人版）—— 它没有订阅槽位，需要自己填 `Proxy` 节点。
 
 ---
 
@@ -60,38 +60,38 @@ egern-anti-dns-leak/
 
 ## 📦 两个版本
 
-**只有两个可选版本** —— 其余 `profiles/*.yaml` 都是 `v2.4` 的历代旧版，保留只为对照。
+只有两个可选版本。其余 `profiles/*.yaml` 都是 `v2.4` 的历代旧版，保留以备对照。
 
 | 版本 | 策略组 | 规则 | 机场槽位 | 定位 |
 |:----:|:------:|:----:|:--------:|:-----|
-| **`v2.4`** ⭐ | 27 | 24 | 2 | **推荐** —— 完整分流 |
-| `v0` | 4 | 9 | 0 | 极简懒人版 —— 只做防泄露 |
+| **`v2.4`** ⭐ | 27 | 24 | 2 | **推荐** · 完整分流 |
+| `v0` | 4 | 9 | 0 | 极简懒人版 · 只做防泄露 |
 
-- ⭐ **`v2.4`（推荐）** —— 完整分流：AI / 流媒体 / 地区组齐全，27 组 / 24 条规则；21 条 `rule_set` 带 `update_interval: 86400`，规则集按天自动刷新。
-- 🪶 **`v0`（极简懒人版）** —— 只要防泄露、不要分流就选它：只留 `Proxy` / `AI` / `AD` / `Final` 4 个组、9 条规则。⚠️ 它没有 `Airport-*` 订阅槽位，**`Proxy` 必须自己填节点**。
-- **同版本的两份**（`.yaml` 带注释 / `.min.yaml` 纯配置）**内容完全一致**，只差注释，取用其一即可。
+- **`v2.4`** —— AI / 流媒体 / 地区组齐全。21 条 `rule_set` 带 `update_interval: 86400`，规则集按天自动刷新。
+- **`v0`** —— 只留 `Proxy` / `AI` / `AD` / `Final` 四个组。没有订阅槽位，`Proxy` 必须自己填节点。
+- **两份形态** —— `.yaml`（带注释）与 `.min.yaml`（纯配置）内容一致，只差注释，取用其一即可。
 
-**旧版 `v1` → `v2.3`**（能力已被 `v2.4` 完全覆盖，保留以备对照）—— 逐版差异、各版组 / 规则数与实测读数见
-[`docs/07-文件版本沿革.md`](docs/07-文件版本沿革.md)。⚠️ 文件名 `v0`…`v2.4` 是**文件版本**，
-与 [`docs/06`](docs/06-实测数据与版本谱系.md) 的「配置迭代谱系 v1~v10」是两个维度。
+旧版 `v1` → `v2.3` 的逐版差异、各版组 / 规则数与实测读数 → [`docs/07-文件版本沿革.md`](docs/07-文件版本沿革.md)。
+
+> ⚠️ 文件名 `v0`…`v2.4` 是**文件版本**；[`docs/06`](docs/06-实测数据与版本谱系.md) 的「配置迭代谱系 v1~v10」是另一个维度。
 
 ---
 
 ## 🌐 防泄露原理
 
-**Egern 有两套 DNS**，理解这一点就够了：
+Egern 有两套 DNS。
 
 | DNS | 负责 | 上游怎么选 |
 |:---:|:----:|:----------:|
-| **默认 DNS** | 业务流量解析 | 按 `dns.forward` 匹配；未命中回退到 `bootstrap` |
-| **代理 DNS** | 只解析节点 `server` 里的域名 | `dns.proxy_nameservers`，**强制直连**（代理还没通，不可能让它解析自己的地址） |
+| **默认 DNS** | 业务流量解析 | 按 `dns.forward` 匹配；未命中回退 `bootstrap` |
+| **代理 DNS** | 只解析节点 `server` 里的域名 | `dns.proxy_nameservers`，**强制直连** |
 
-**泄露只有一条出口：明文 `UDP:53` 的 `bootstrap`。** 本模板用三条原则让它无事可做：
+泄露只有一条出口：明文 `UDP:53` 的 `bootstrap`。三条原则让它无事可做：
 
 | # | 原则 | 做法 |
 |:-:|:----:|:-----|
 | ① | **端点全写 IP 字面量** | `upstreams` / `proxy_nameservers` 里没有任何主机名 ⇒ 没有待解析的目标 |
-| ② | **`no_resolve` 成对交付** | 所有 IP 类规则带 `no_resolve`；代价是用一份纯域名规则集（`direct.txt`，11 万条）补回域名判定 |
+| ② | **`no_resolve` 成对交付** | 所有 IP 类规则带 `no_resolve`；用一份纯域名规则集（`direct.txt`，11 万条）补回域名判定 |
 | ③ | **`forward` 塌缩为兜底** | 配了 `proxy_nameservers` 后代理 DNS 会**跳过** `forward` ⇒ 换订阅不用改一行 |
 
 启动期、节点域名解析、业务解析 —— 三条路径都不再接触明文 `:53`。
@@ -102,15 +102,7 @@ egern-anti-dns-leak/
 
 ## 🎯 分流组结构
 
-以 **`v2.4`** 为例（27 个组 / 24 条规则）。**组与组可以互相引用**，最终都收敛到 `Proxy` 或 `DIRECT`。
-
-> 💡 **先统一说清 `flatten: true`** —— 它在这份配置里反复出现，含义是「把子策略组**展开成全部具体节点**」，
-> 而不是当成一个「组」单位。以 `Smart` 为例：不加 `flatten` 时它的候选是「`Airport-A` 组」「`Airport-B` 组」
-> 两个单位（两级选优），加了之后才是订阅里的**全部具体节点**（一级选优）。
-> 官方「通用字段」明确它在 `select` / `auto_test` / `smart` / `fallback` / `load_balance` 五种基础类型上通用。
-> 本模板的 `Smart` / `MAX` / `ChatGPT` / `Gemini` 与全部地区组都用了它。
-
-> 🧩 `v0` 另有两处**只属于它**的调整：`AD` 组**只有 `REJECT`**（没有 `DIRECT` 兜底）、`Final` 组**被隐藏**（只有一个子策略，没有手动切换的意义）。详见其文件内注释。
+以 **`v2.4`** 为例：27 个组 / 24 条规则。组与组可以互相引用，最终都收敛到 `Proxy` 或 `DIRECT`。
 
 ### ✈️ 节点来源（2 个订阅槽位）
 
@@ -119,29 +111,24 @@ egern-anti-dns-leak/
 | `Airport-A` | `external` | 订阅槽位 ① |
 | `Airport-B` | `external` | 订阅槽位 ②（另带一条 `urls_disabled` 示例） |
 
-> `v2.1` 及更早的版本有 4 个槽位（多出 `Airport-C` / `Airport-Free`）—— `v2.2` 精简掉了，选路能力不变。
-
 ### 🚀 核心组
 
 | 策略组 | 类型 | 说明 |
 |:------:|:----:|:-----|
 | `Proxy` | `select` | **主入口** · 手动选路（默认列出 `MAX` / `Smart` / 各地区） |
-| `Smart` | `smart` | 智能选优 · 上游 `Airport-A` · `B`，组内多轮测速，按延迟 / 抖动 / 可靠性打分 |
-| `MAX` | `smart` | **带节点筛选的 `Smart`** · 上游同 `Smart`，额外用 `filter: (?<![\d.])0\.\d*[1-9]` 只留**倍率 < 1** 的节点 |
-| `Final` | `select` | **兜底组** · 所有未命中规则的流量走这里 |
-| `AD` | `select` | 广告拦截 · 默认 `REJECT`，想临时放行切 `DIRECT`（`v0` 无此选项） |
+| `Smart` | `smart` | 智能选优 · 上游 `Airport-A` · `B` |
+| `MAX` | `smart` | 带节点筛选的 `Smart` · 只留**倍率 < 1** 的节点 |
+| `Final` | `select` | **兜底组** · 未命中规则的流量走这里 |
+| `AD` | `select` | 广告拦截 · 默认 `REJECT`，想临时放行切 `DIRECT` |
 
 ### 🤖 AI 组
 
 | 策略组 | 类型 | 说明 |
 |:------:|:----:|:-----|
 | `AI` | `smart` | **总入口** · 指向 `Proxy`，承接 `AI.list` |
-| `ChatGPT` | `fallback` | 故障转移 · 子策略 `Proxy` + `flatten: true` |
-| `Gemini` | `fallback` | 同上（`Google` 组的**首项就是它**，默认选中） |
+| `ChatGPT` | `fallback` | 故障转移 · `Proxy` + `flatten: true` |
+| `Gemini` | `fallback` | 同上（`Google` 组首项，默认选中） |
 | `Claude` | `smart` | 默认指向 `Taiwan` |
-
-> 💡 `ChatGPT` / `Gemini` 除了上面说的展开效果，还多一层理由：`fallback` 是**按顺序取第一个可用**的，
-> 不加 `flatten` 时它只有「`Proxy`」**一个候选** —— 等于没有故障转移能力。
 
 ### 🌍 地区组（`smart` + `filter` 正则）
 
@@ -154,9 +141,6 @@ egern-anti-dns-leak/
 | `Singapore` | 新加坡 / SG / SIN | Airport-A · B |
 | `Korea` | 韩国 / KR / ICN | Airport-A · B |
 | `Other Regions` | **负向断言**：排除以上全部 | Airport-A · B |
-
-> ⚠️ 「按正则把节点归类」是 **`filter`** 干的，不是 `smart` 本身 —— `smart` 只负责在筛出来的节点里选最优。
-> ⚠️ `Other Regions` 的负向断言把上面 6 个地区组的关键词**逐字抄了一遍**。改任何一个地区组的关键词，都要同步改它 —— 用 [`skill/scripts/audit_region_filters.py`](skill/scripts/audit_region_filters.py) 校验（漏改会被它拦下）。
 
 ### 📦 服务组
 
@@ -171,6 +155,8 @@ egern-anti-dns-leak/
 | `Telegram` | `Proxy` | Telegram |
 | `Twitter` | `Proxy` | Twitter |
 | `WeChat` | `DIRECT` | WeChat |
+
+> `flatten` 的含义、`MAX` 的筛选正则、`Other Regions` 负向断言的维护、`v0` 的专属调整 —— 见 [`DetailsReadme` §1.3](DetailsReadme/DetailsReadme.md#13-policy_groups--四种类型组间引用图标)。
 
 ---
 
