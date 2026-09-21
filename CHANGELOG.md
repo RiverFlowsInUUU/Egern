@@ -29,7 +29,7 @@
 - 🐛 **`docs/06` 的谱系范围标注错误** —— 此前称其收录 v1~v10，实际只到 v8；v9–v10 的完整谱系在 `DetailsReadme` §3。
 - 🐛 **`DetailsReadme` 大量描述停在 `v1` 时期** —— `dns` 子段端点数（6 / 3 / 6 → 实际 4 / 2 / 4）、`forward` 兜底（2 条 → 1 条）、顶层段（约 15 个 → 12 个，并删掉三个不存在的键）、`Foreign-DNS`（写成「注释保留」→ `v2` 起已整段删除）、`ChatGPT` / `Gemini`（写成待填空组 → `v2.3` 起已填 `[Proxy]` + `flatten`）。
 - 🐛 **`DetailsReadme` §4 的脚本表只列 3 个审计脚本** —— 实际 5 个（漏了 `audit_dns_forward.py` / `audit_region_filters.py`）；§3 的 `check_egern_dns.py` 读数写成 30 ok，那是 `v1` 的值（`v2` 起为 24 ok）。
-- 🐛 **`DetailsReadme` 写死 `direct.txt` 的条目数**（111,160 条）—— 该列表随上游更新，改用约数。
+- 🐛 **多份文档写死 `direct.txt` 的条目数**（111,160 条，`DetailsReadme` / `docs/04` / `docs/05` / `docs/06`）—— 该列表随上游更新，改用约数。
 
 **安全**
 
