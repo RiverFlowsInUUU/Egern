@@ -94,7 +94,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 关键词**逐字抄了一遍** —— 改任何一组的关键词都要同步改它，
 用 [`skill/scripts/audit_region_filters.py`](../skill/scripts/audit_region_filters.py) 校验（漏改会被它拦下）。
 
-**服务组**（默认策略与承接的规则集）见 [`README.md`「分流组结构」](../README.md#-分流组结构)。
+**服务组**（默认策略与承接的规则集）见 [`README.md`「分流组结构」](../README.md#分流组结构)。
 
 **`v0` 的两处专属调整**（只属于它，不同步其他版本）：`AD` 组**只有 `REJECT`**（没有 `DIRECT` 兜底）、
 `Final` 组**被隐藏**（只有一个子策略，没有手动切换的意义）。
