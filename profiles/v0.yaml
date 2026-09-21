@@ -87,18 +87,22 @@ policy_groups:
     policies:
     - Proxy
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
-# 广告拦截。默认选 REJECT（拦截）；想临时放行就手动切到 DIRECT。
+# 广告拦截。只有一个子策略：REJECT（拦截）。
+# v0 不再提供 DIRECT 兜底 —— 想临时放行某个广告域名，在 rules 里加一条更靠前的
+# domain / domain_suffix 规则指向 DIRECT 即可（别整组切走，那等于关掉全部拦截）。
 - select:
     name: AD
     policies:
     - REJECT
-    - DIRECT
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/AdBlock.png
 # 兜底组：所有未命中规则的流量走这里，当前指向 Proxy。
+# 已隐藏：它只有一个子策略（Proxy），没有手动切换的意义。
+# 想让兜底走别的出口，改这里的 policies 即可（改完它依然是隐藏的）。
 - select:
     name: Final
     policies:
     - Proxy
+    hidden: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Final.png
 # ============================================================================
 # 规则：顺序就是一切（自上而下第一条命中即决定去向）
