@@ -8,7 +8,7 @@
 
 [![Egern](https://img.shields.io/badge/Egern-Client-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
-[![Profiles](https://img.shields.io/badge/Profiles-v2.4%20%7C%20v0-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
+[![Profiles](https://img.shields.io/badge/Profiles-v2.5%20%7C%20v0-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![Groups](https://img.shields.io/badge/Groups-27-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![License](https://img.shields.io/badge/License-MIT-dfb317?style=flat-square)](docs/10-图标与许可.md)
 
@@ -35,7 +35,7 @@
 ## 🚀 快速开始
 
 ```
-1️⃣ 挑配置   →   profiles/v2.4.yaml（推荐）
+1️⃣ 挑配置   →   profiles/v2.5.yaml（推荐）
 2️⃣ 填订阅   →   Airport-A / Airport-B 的 urls
 3️⃣ 填节点   →   proxies 段（可选）
 4️⃣ 导入     →   Egern
@@ -56,7 +56,7 @@
 
 ```
 egern-anti-dns-leak/
-├── 📁 profiles/            # 14 份配置（2 个可选版本 + 5 份旧版，各有带注释 / 纯配置两份）
+├── 📁 profiles/            # 16 份配置（2 个可选版本 + 6 份旧版，各有带注释 / 纯配置两份）
 ├── 🖼️ icons/               # 分流组图标（已内置，不跨项目引用）
 ├── 📚 docs/                # 10 篇专题（原理 / 清单 / 谱系 / 版本沿革 / 审计读数 / 注意事项 等）
 ├── 📘 DetailsReadme/       # 完整技术文档
@@ -68,20 +68,20 @@ egern-anti-dns-leak/
 
 ## 📦 两个版本
 
-只有两个可选版本。其余 `profiles/*.yaml` 都是 `v2.4` 的历代旧版，保留以备对照。
+只有两个可选版本。其余 `profiles/*.yaml` 都是 `v2.5` 的历代旧版，保留以备对照。
 
 | 版本 | 策略组 | 规则 | 槽位 | 定位 |
 |:----:|:------:|:----:|:----:|:-----|
-| ⭐ **`v2.4`** | 27 | 24 | 2 | **推荐** · 完整分流 |
+| ⭐ **`v2.5`** | 27 | 24 | 2 | **推荐** · 完整分流 |
 | 🪶 `v0` | 4 | 9 | 0 | 极简懒人版 · 只做防泄露 |
 
-- ⭐ **`v2.4`** —— AI / 流媒体 / 地区组齐全。21 条 `rule_set` 带 `update_interval: 86400`，规则集按天自动刷新。
+- ⭐ **`v2.5`** —— AI / 流媒体 / 地区组齐全。21 条 `rule_set` 带 `update_interval: 86400`，规则集按天自动刷新。相对 `v2.4` 只换一处：广告拦截规则集改用 `jinx-ads-rules` 的 delta 版清单。
 - 🪶 **`v0`** —— 只留 `Proxy` / `AI` / `AD` / `Final` 四个组。没有订阅槽位，`Proxy` 必须自己填节点。
 - 📄 **两份形态** —— `.yaml`（带注释）与 `.min.yaml`（纯配置）内容一致，只差注释，取用其一即可。
 
-旧版 `v1` → `v2.3` 的逐版差异、各版组 / 规则数与实测读数 → [`docs/07-文件版本沿革.md`](docs/07-文件版本沿革.md)。
+旧版 `v1` → `v2.4` 的逐版差异、各版组 / 规则数与实测读数 → [`docs/07-文件版本沿革.md`](docs/07-文件版本沿革.md)。
 
-> ⚠️ 文件名 `v0`…`v2.4` 是**文件版本**；[`docs/06`](docs/06-实测数据与版本谱系.md) 的「配置迭代谱系 v1~v10」是另一个维度。
+> ⚠️ 文件名 `v0`…`v2.5` 是**文件版本**；[`docs/06`](docs/06-实测数据与版本谱系.md) 的「配置迭代谱系 v1~v10」是另一个维度。
 
 ---
 
@@ -108,7 +108,7 @@ Egern 有两套 DNS。
 
 ## 🎯 分流组结构
 
-以 **`v2.4`** 为例：27 个组 / 24 条规则。组与组可以互相引用，最终都收敛到 `Proxy` 或 `DIRECT`。
+以 **`v2.5`** 为例：27 个组 / 24 条规则。组与组可以互相引用，最终都收敛到 `Proxy` 或 `DIRECT`。
 
 **✈️ 节点来源** —— 2 个订阅槽位
 
