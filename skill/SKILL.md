@@ -521,6 +521,7 @@ Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可�
 "<venv>/Scripts/python.exe" scripts/audit_routing_coverage.py profile.yaml   # ★★ 分流覆盖审计（清单 17，域名→命中规则→策略）
 "<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml         # ★ forward 单值性/订阅耦合审计（清单 18）
 "<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml --drill # ↑ --drill 可选：加合成"未来订阅"域名多演练一遍
+"<venv>/Scripts/python.exe" scripts/audit_region_filters.py profile.yaml      # ★ 地区组 filter 与 Other Regions 负向断言的「两份拷贝」同步校验
 "<venv>/Scripts/python.exe" scripts/probe_doh.py                    # 只测 DoH 线格式
 "<venv>/Scripts/python.exe" scripts/profile_ruleset.py some.list    # 规则集类型分布
 "<venv>/Scripts/python.exe" scripts/weigh_ruleset.py some.list [--sub small.list] [--probe d]  # ★ 规则集"重量"：构成/冗余/深度/加载与匹配耗时/覆盖对比
@@ -645,6 +646,7 @@ v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随�
 README.md                                   # 三条铁律 + 一图看懂回退链
 profiles/v2.2.yaml                          # 脱敏模板 · 推荐版（无节点、无订阅、无证书；机场槽位 2 个）
 profiles/v2.2.min.yaml                      # 同上，纯配置版（去注释）
+profiles/v2.3.yaml / v2.3.min.yaml          # 🧪 测试版（v2.2 + 3 处修正，未真机实测，不替代 v2.2）
 profiles/v2.1.yaml / v2.1.min.yaml          # 保留（与 v2.2 只差机场槽位：4 个 vs 2 个）
 profiles/v2.yaml / v2.min.yaml              # 保留原样（比 v2.1 多 52 行「值等于默认值」的冗余行）
 profiles/v1.yaml / v1.min.yaml              # 旧版，保留不删（dns 段较冗长，功能等价）
@@ -666,7 +668,7 @@ skill/                                       # 本 skill（含全部脚本）
 📌 **本仓库刻意不挂 GitHub Actions（2026-09-21 决定）。**
 曾经加过 `.github/workflows/audit-regression.yml`，后来**主动撤掉**，两个原因：
 1. **收益接近于零**：这是个人模板仓库，不会有外部贡献者，"自动验 PR"没有服务对象；
-   而本地跑一次 `bash skill/tests/run.sh` + 4 个审计脚本只要几十秒。
+   而本地跑一次 `bash skill/tests/run.sh` + 5 个审计脚本只要几十秒。
 2. **`pull_request` 触发是已知攻击面**：陌生人对公开仓库提 PR、在 PR 里改 workflow 文件，
    runner 就可能被用来跑他的代码 —— 这是 GitHub 上被滥用挖矿的经典手法
    （2021 年那批事故里 95 个仓库中招）。GitHub 对首次贡献者默认要维护者**手动批准**才跑，

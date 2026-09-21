@@ -14,7 +14,7 @@
 <p align="center">
   <a href="#-快速开始">快速开始</a> •
   <a href="#-文件结构">文件结构</a> •
-  <a href="#-五个版本">五个版本</a> •
+  <a href="#-六个版本">六个版本</a> •
   <a href="#-防泄露原理">防泄露原理</a> •
   <a href="#-分流组结构">分流组结构</a> •
   <a href="#-规则优先级">规则优先级</a> •
@@ -35,6 +35,8 @@
 5. 导入 Egern   →  完成
 ```
 
+> 🧪 `profiles/v2.3.yaml` 是**测试版**，修了 `v2.2` 的三处已知问题，但**尚未在真机实测**。想尝鲜可以试，日常使用仍建议 `v2.2`。
+
 **必须动手的三处**（不填则代理不通）：
 
 | 位置 | 现状 | 填什么 |
@@ -54,6 +56,8 @@ egern-anti-dns-leak/
 ├── profiles/
 │   ├── v2.2.yaml        # 推荐 · 带注释
 │   ├── v2.2.min.yaml    # 推荐 · 纯配置
+│   ├── v2.3.yaml        # 测试版 · 带注释（修 v2.2 的三处问题，未真机实测）
+│   ├── v2.3.min.yaml    # 测试版 · 纯配置
 │   ├── v2.1.yaml        # 保留 · 带注释（与 v2.2 仅机场槽位数不同）
 │   ├── v2.1.min.yaml    # 保留 · 纯配置
 │   ├── v2.yaml          # 保留 · 带注释（与 v2.1 逻辑等价）
@@ -70,21 +74,23 @@ egern-anti-dns-leak/
 
 ---
 
-## 📦 五个版本
+## 📦 六个版本
 
 | 版本 | 策略组 | 规则 | 机场槽位 | 定位 |
 |:----:|:------:|:----:|:--------:|:-----|
 | **`v2.2`** ⭐ | 27 | 24 | **2** | **推荐** · `v2.1` 的精简后继（机场槽位 4 → 2） |
+| `v2.3` 🧪 | 27 | 24 | 2 | **测试版** · `v2.2` + 三处修正，**未真机实测**，不替代 `v2.2` |
 | `v2.1` | 29 | 24 | 4 | 保留 · 与 `v2.2` 只差机场槽位 |
 | `v2` | 29 | 24 | 4 | 保留原样 · 与 `v2.1` 逻辑逐项等价 |
 | `v1` | 29 | 24 | 4 | 旧版 · `dns` 段 40 行，功能等价 |
 | `v0` | 4 | 9 | 0 | 极简裁剪 · 只留 `Proxy` / `AI` / `AD` / `Final` |
 
 - **同版本的两份**（`.yaml` 带注释 / `.min.yaml` 纯配置）**内容完全一致**，只差注释，取用其一即可。
+- **`v2.3` 与 `v2.2` 的差别只在 `policy_groups` 段**，且只有 3 个组：`MAX` 的 `filter` 改为「收录所有倍率 < 1 的节点」（原写法既误收 `10.1` 这类、又漏收 `0.5` 这类）、`Korea` 的上游去掉冗余的 `Smart`、`Smart` 补上 `flatten: true`。`dns` 段与规则**逐行相同**。
 - **`v2.2` 与 `v2.1` 的差别只在 `policy_groups` 段**：机场订阅槽位 **4 → 2**（删 `Airport-C` / `Airport-Free`），`MAX` 组不再自带订阅 URL、改为「带节点筛选的 `Smart`」。`dns` 段与规则**逐行相同**。
 - **`v1` 与 `v2.1` 的差别只在 `dns` 段**（40 行 vs 22 行），其余段逐行相同。防泄露能力经审计脚本实测**逐项等价**。
-- **`v2.1` 与 `v2` 的差别只有 52 行**，且全是「值等于官方默认值」的冗余行（`ipv6: false` / `compat_route: false` / `include_all_networks: false` / `include_apns: false` / `flatten: false` / `hidden: false` / `disabled: false`）。这些值写与不写对 Egern 是**同一份配置**，所以两者逻辑**逐项等价** —— 4 个审计脚本的输出完全一致。
-- ⚠️ 别把文件名 `v0` / `v1` / `v2` / `v2.1` / `v2.2` 与 [`docs/06`](docs/06-实测数据与版本谱系.md) 里的 **v1~v10 迭代谱系**混淆 —— 前者是**文件版本**，后者是配置**自身的历史迭代**，两个维度。
+- **`v2.1` 与 `v2` 的差别只有 52 行**，且全是「值等于官方默认值」的冗余行（`ipv6: false` / `compat_route: false` / `include_all_networks: false` / `include_apns: false` / `flatten: false` / `hidden: false` / `disabled: false`）。这些值写与不写对 Egern 是**同一份配置**，所以两者逻辑**逐项等价** —— 各审计脚本的输出完全一致。
+- ⚠️ 别把文件名 `v0` / `v1` / `v2` / `v2.1` / `v2.2` / `v2.3` 与 [`docs/06`](docs/06-实测数据与版本谱系.md) 里的 **v1~v10 迭代谱系**混淆 —— 前者是**文件版本**，后者是配置**自身的历史迭代**，两个维度。
 
 ---
 
@@ -131,12 +137,13 @@ egern-anti-dns-leak/
 | 策略组 | 类型 | 说明 |
 |:------:|:----:|:-----|
 | `Proxy` | `select` | **主入口** · 手动选路（默认列出 `MAX` / `Smart` / 各地区） |
-| `Smart` | `smart` | 智能选优 · 上游 `Airport-A` · `B`，组内多轮测速，按延迟 / 抖动 / 可靠性打分 |
-| `MAX` | `smart` | **带节点筛选的 `Smart`** · 上游同 `Smart`，额外用 `filter: 0\.(?:01\|1)` 只留低倍率节点 |
+| `Smart` | `smart` | 智能选优 · 上游 `Airport-A` · `B`，组内多轮测速，按延迟 / 抖动 / 可靠性打分（`v2.3` 起带 `flatten: true`，候选为**全部具体节点**） |
+| `MAX` | `smart` | **带节点筛选的 `Smart`** · 上游同 `Smart`，额外用 `filter: (?<![\d.])0\.\d*[1-9]` 只留**倍率 < 1** 的节点 |
 | `Final` | `select` | **兜底组** · 所有未命中规则的流量走这里 |
 | `AD` | `select` | 广告拦截 · 默认 `REJECT`，想临时放行切 `DIRECT`（`v0` 无此选项） |
 
 > ⚠️ `MAX` 在 `v2.1` 及更早版本里**自带订阅 URL**，是第二个订阅入口；`v2.2` 去掉了它的 `urls`，改为与 `Smart` 同构（同上游 + 一个 `filter`）。
+> 🧪 `MAX` 的 `filter` 在 `v2.2` 里写的是 `0\.(?:01|1)` —— 只认字面 `0.01` / `0.1`，且没有左边界，既会误收 `10.1 倍率`、又会漏收 `0.5` / `0.99` 这类同样 < 1 的倍率。`v2.3` 换成 `(?<![\d.])0\.\d*[1-9]`。
 
 ### 🤖 AI 组
 
@@ -156,10 +163,12 @@ egern-anti-dns-leak/
 | `Japan` | 日本 / 东京 / NRT / KIX … | Airport-A · B |
 | `Taiwan` | 台湾 / TW / TPE | Airport-A · B |
 | `Singapore` | 新加坡 / SG / SIN | Airport-A · B |
-| `Korea` | 韩国 / KR / ICN | Smart · Airport-A · B |
+| `Korea` | 韩国 / KR / ICN | Airport-A · B |
 | `Other Regions` | **负向断言**：排除以上全部 | Airport-A · B |
 
 > ⚠️ 「按正则把节点归类」是 **`filter`** 干的，不是 `smart` 本身 —— `smart` 只负责在筛出来的节点里选最优。
+> ⚠️ `Other Regions` 的负向断言把上面 6 个地区组的关键词**逐字抄了一遍**。改任何一个地区组的关键词，都要同步改它 —— 用 [`skill/scripts/audit_region_filters.py`](skill/scripts/audit_region_filters.py) 校验（漏改会被它拦下）。
+> 🧪 `Korea` 在 `v2.2` 里的上游含 `Smart`，但 `v2.2` 起 `Smart ⊂ (Airport-A ∪ Airport-B)`，而 `Korea` 本来就引用了 A、B ⇒ `Smart` 完全冗余。`v2.3` 去掉了它。
 
 ### 📦 服务组
 
@@ -207,9 +216,10 @@ egern-anti-dns-leak/
 | 脚本 | 读数 |
 |:----:|:----:|
 | `check_egern_dns.py` | ✅ **0 high**（退出码 0），另有 2 条 `LOW` |
-| `audit_ruleset_noresolve.py` | ✅ 全部通过（v2.2 / v2.1 / v1 / v2 各 21 个规则集 · v0 为 6 个） |
+| `audit_ruleset_noresolve.py` | ✅ 全部通过（v2.x / v1 各 21 个规则集 · v0 为 6 个） |
 | `audit_routing_coverage.py` | ✅ 15/15 国内探针命中 `DIRECT` |
 | `audit_dns_forward.py` | ✅ 通过（带 / 不带 `--drill` 都通过） |
+| `audit_region_filters.py` | ✅ 6 个地区组的关键词全部同步进 `Other Regions` 的负向断言（v0 无此结构，自动跳过） |
 
 **那 2 条 `LOW` 不是缺陷，是设计取舍** —— ① 设置了 `proxy_nameservers`（它成为代理侧解析的唯一出口）；② 兜底指向国内组（需要本地解析的境外域名会拿到国内答案，实际影响面仅限 `DIRECT` 域名）。详见 [`DetailsReadme` §6](DetailsReadme/DetailsReadme.md#6-已知代价与取舍)。
 
@@ -238,8 +248,8 @@ egern-anti-dns-leak/
 | ✈️ **订阅必填** | `Airport-A` / `Airport-B` 的 `sub.example.com` 占位要换成你自己的订阅地址（只这两处） |
 | 🎯 **分流组必填** | 空的 `policies: []` 要填节点名，否则 `Final → Proxy` 是断的 |
 | 🧩 **`v0` 尤其注意** | 它只留 4 个组，`Proxy` 为空时**所有走代理的流量都不通** |
-| 🧪 **自查方式** | 本仓库**刻意不挂 CI**（理由见 [`skill/README.md`](skill/README.md)）。改完 profile 请本地跑 `bash skill/tests/run.sh` + 4 个审计脚本 |
-| 🔀 **命名歧义** | 文件名 `v0` / `v1` / `v2` / `v2.1` / `v2.2` ≠ `docs/06` 的迭代谱系 `v1~v10` |
+| 🧪 **自查方式** | 本仓库**刻意不挂 CI**（理由见 [`skill/README.md`](skill/README.md)）。改完 profile 请本地跑 `bash skill/tests/run.sh` + 5 个审计脚本 |
+| 🔀 **命名歧义** | 文件名 `v0` / `v1` / `v2` / `v2.1` / `v2.2` / `v2.3` ≠ `docs/06` 的迭代谱系 `v1~v10` |
 
 ---
 
@@ -255,12 +265,13 @@ egern-anti-dns-leak/
 
 ## 📝 更新日志
 
-> 记录**模板本身**的显著变动，按时间倒序。配置文件版本的说明见上方 [📦 五个版本](#-五个版本)。
+> 记录**模板本身**的显著变动，按时间倒序。配置文件版本的说明见上方 [📦 六个版本](#-六个版本)。
 
 ### 2026-09-21
 
 **新增**
 
+- 🧪 **`v2.3`（测试版）** —— `v2.2` 的三处修正，**不替代 `v2.2`**，改动尚未在真机实测：① `MAX` 的 `filter` 换成 `(?<![\d.])0\.\d*[1-9]`，收录**所有倍率 < 1** 的节点（原写法既误收 `10.1 倍率`、又漏收 `0.5` / `0.99`）；② `Korea` 的上游去掉冗余的 `Smart`（`v2.2` 起 `Smart ⊂ (Airport-A ∪ Airport-B)`）；③ `Smart` 补上 `flatten: true`，候选从「A 组 / B 组」两个单位变成**全部具体节点**。`dns` 段与规则逐行未变。
 - ✨ **`v2.2`（推荐版）** —— 机场订阅槽位 **4 → 2**（删 `Airport-C` / `Airport-Free`），`MAX` 组改为「带节点筛选的 `Smart`」、不再自带订阅 URL；`dns` 段与规则逐行未变。
 - ✨ **`v2.1`** —— `v2` 的精简版：删掉 52 行与官方默认值重复的配置项，**行为完全一致**。
 
@@ -273,6 +284,10 @@ egern-anti-dns-leak/
 **移除**
 
 - 🧹 **`v0` / `v1`** —— 删除与官方默认值重复的配置项（−17 / −52 行），**行为无变化**。
+
+**安全**
+
+- 🔒 新增 `skill/scripts/audit_region_filters.py` —— 守住 `Other Regions` 负向断言与 6 个地区组关键词的「两份拷贝」同步（漏同步会让两组不再互斥）。
 
 ### 2026-09-20
 

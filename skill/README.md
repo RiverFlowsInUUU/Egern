@@ -20,6 +20,7 @@ cp -r skill ~/.workbuddy/skills/egern-profile-dns-hardening
 | `scripts/audit_ruleset_noresolve.py` | **规则集层审计**（清单 16）。下载全部被引用的远程规则集，数出"缺 `no-resolve` 的 IP 条目" |
 | `scripts/audit_routing_coverage.py` | **分流覆盖审计**（清单 17）。域名 → 命中规则 → 策略；15 个**非 `.cn`** 国内探针 + 7 个境外探针 |
 | `scripts/audit_dns_forward.py` | **forward 单值性 / 订阅耦合审计**（清单 18）。判断 `forward` 的 value 是否单值、有没有把节点域名写死、`--drill` 用合成"未来订阅"域名演练 |
+| `scripts/audit_region_filters.py` | **地区组 filter 同步审计**。6 个地区组的关键词是「两份拷贝」（各自一份 + `Other Regions` 负向断言里一份），漏同步会让两组不再互斥；本脚本逐字比对，缺项即报错 |
 | `scripts/profile_ruleset.py` | 规则集类型分布（识破"名字骗人"，例如 `ChinaMax.list` 其实 98.6% 是 IP） |
 | `scripts/probe_dns_endpoints.py` | 逐个实测加密 DNS 端点（DoH 线格式 / DoT 853 握手 + 证书） |
 | `scripts/probe_doh.py` | 只测 DoH 线格式（判端点死活**只能**用这个，不能用 JSON API） |
@@ -43,6 +44,7 @@ python "$S/audit_ruleset_noresolve.py"    Profile.yaml          # 期望 OK
 python "$S/audit_routing_coverage.py"     Profile.yaml          # 期望 15/15 DIRECT
 python "$S/audit_dns_forward.py"           Profile.yaml          # 期望 通过（forward 与订阅解耦）
                                                                  # --drill 可选（加演练域名），不加也应通过
+python "$S/audit_region_filters.py"       Profile.yaml          # 期望 地区组关键词全部同步（v0 无此结构，自动跳过）
 python "$S/profile_ruleset.py"            ChinaMax.list         # 规则集类型分布
 python "$S/probe_dns_endpoints.py"        Profile.yaml          # 端点实测
 
