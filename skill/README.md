@@ -61,7 +61,7 @@ python "$S/audit_region_filters.py"       Profile.yaml          # 期望 地区�
 python "$S/profile_ruleset.py"            ChinaMax.list         # 规则集类型分布
 python "$S/probe_dns_endpoints.py"        Profile.yaml          # 端点实测
 
-bash ./skill/tests/run.sh                                       # 回归测试两阶段，共 22 断言
+bash ./skill/tests/run.sh                                       # 回归测试两阶段，共 24 断言
 ```
 
 退出码 **0 = 通过**，用于提交前检查（本仓库**不挂 CI**，全部本地手动跑）。

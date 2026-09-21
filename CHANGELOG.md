@@ -1,7 +1,7 @@
 # 📝 更新日志
 
 > 记录**模板本身**的显著变动、以及**会误导使用者的文档错误**，按时间倒序。格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
-> 配置文件版本的说明见 [`README.md`](README.md) 的 [📦 七个版本](README.md#-七个版本)。
+> 配置文件版本的说明见 [`README.md`](README.md) 的 [📦 两个版本](README.md#-两个版本)。
 
 ### 2026-09-21
 
@@ -15,6 +15,7 @@
 **变更**
 
 - 🔧 **推荐版当天三次移交** —— `v2.1` → `v2.2` → `v2.3` → `v2.4`；`v2.2` / `v2.3` 降为保留版。
+- 📝 **README 首页的版本介绍由「七个版本」改为「两个版本」** —— 平铺 7 行容易让人以为要从中挑一个。实际只有 `v2.4`（推荐，完整分流）与 `v0`（极简懒人版）两个可选，其余 5 个都是 `v2.4` 的历代旧版、保留以备对照。
 - 🛡️ **`v0` / `v1` / `v2`** —— 规则数 22 → 24（`v0` 为 7 → 9），新增广告白名单守卫。
 - 🔧 **`v0`** —— `AD` 组只保留 `REJECT`；`Final` 组不再显示在策略列表中。
 
@@ -30,6 +31,7 @@
 - 🐛 **`DetailsReadme` 大量描述停在 `v1` 时期** —— `dns` 子段端点数（6 / 3 / 6 → 实际 4 / 2 / 4）、`forward` 兜底（2 条 → 1 条）、顶层段（约 15 个 → 12 个，并删掉三个不存在的键）、`Foreign-DNS`（写成「注释保留」→ `v2` 起已整段删除）、`ChatGPT` / `Gemini`（写成待填空组 → `v2.3` 起已填 `[Proxy]` + `flatten`）。
 - 🐛 **`DetailsReadme` §4 的脚本表只列 3 个审计脚本** —— 实际 5 个（漏了 `audit_dns_forward.py` / `audit_region_filters.py`）；§3 的 `check_egern_dns.py` 读数写成 30 ok，那是 `v1` 的值（`v2` 起为 24 ok）。
 - 🐛 **多份文档写死 `direct.txt` 的条目数**（111,160 条，`DetailsReadme` / `docs/04` / `docs/05` / `docs/06`）—— 该列表随上游更新，改用约数。
+- 🐛 **`skill/` 下三处回归断言数停在 22** —— 阶段 2 的 profile 份数随 `v2.4` 从 12 增到 14，总数应为 24（`skill/README.md` / `skill/reference/checker.md` / `skill/reference/public-repo.md`）。
 
 **安全**
 

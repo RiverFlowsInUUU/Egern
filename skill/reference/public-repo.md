@@ -17,7 +17,7 @@ profiles/v2.2.yaml / v2.2.min.yaml          # 保留（与 v2.3 只差 4 处修�
 profiles/v2.1.yaml / v2.1.min.yaml          # 保留（与 v2.2 只差机场槽位：4 个 vs 2 个）
 profiles/v2.yaml / v2.min.yaml              # 保留原样（比 v2.1 多 52 行「值等于默认值」的冗余行）
 profiles/v1.yaml / v1.min.yaml              # 旧版，保留不删（dns 段较冗长，功能等价）
-profiles/v0.yaml / v0.min.yaml              # 极简裁剪版（4 组 / 9 条规则，Final 隐藏、AD 只留 REJECT）
+profiles/v0.yaml / v0.min.yaml              # 极简懒人版 · 可选（4 组 / 9 条规则，Final 隐藏、AD 只留 REJECT）
 CHANGELOG.md                                # 更新日志（按时间倒序，README 只留引用）
 docs/01-DNS是怎么工作的.md                   # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
 docs/02-DNS为什么会泄露.md                   # 5 个真实案例（每个：现象→机制→修法）
@@ -28,9 +28,12 @@ docs/06-实测数据与版本谱系.md                 # 端点实测表 / 污�
 skill/                                       # 本 skill（含全部脚本）
 ```
 
+> **可选版本只有两个** —— `v2.4`（推荐，完整分流）与 `v0`（极简懒人版）；
+> 其余 `v2.x` / `v1` 都是 `v2.4` 的历代旧版，保留以备对照。
+
 **要更新模板时**：**直接在仓库里改 `profiles/*.yaml` 即可。** 这份模板早已完成脱敏
 （无节点、无订阅、无证书），改它不需要"从自用配置重新生成"。改完跑
-`bash skill/tests/run.sh`（两阶段 22 断言）+ 下面那批审计脚本，再提交推送。
+`bash skill/tests/run.sh`（两阶段 24 断言）+ 下面那批审计脚本，再提交推送。
 
 > 📦 **历史做法（已不再使用）**：早期由维护者本地的 `outputs/` 脚本链生成 ——
 > `_build_public_template.py`（从自用版做**带断言的行级替换** + 38 个敏感串零残留自检）、
