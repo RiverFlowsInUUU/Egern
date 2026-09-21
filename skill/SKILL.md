@@ -656,6 +656,7 @@ profiles/v2.1.yaml / v2.1.min.yaml          # 保留（与 v2.2 只差机场槽�
 profiles/v2.yaml / v2.min.yaml              # 保留原样（比 v2.1 多 52 行「值等于默认值」的冗余行）
 profiles/v1.yaml / v1.min.yaml              # 旧版，保留不删（dns 段较冗长，功能等价）
 profiles/v0.yaml / v0.min.yaml              # 极简裁剪版（4 组 / 9 条规则，Final 隐藏、AD 只留 REJECT）
+CHANGELOG.md                                # 更新日志（按时间倒序，README 只留引用）
 docs/01-DNS是怎么工作的.md                   # 递归解析 / 加密 DNS / Fake IP / Egern 双轨模型
 docs/02-DNS为什么会泄露.md                   # 5 个真实案例（每个：现象→机制→修法）
 docs/03-加固清单-18项.md                     # 清单 + no_resolve 三层级 + 验收 6 条
