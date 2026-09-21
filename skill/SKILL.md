@@ -596,12 +596,10 @@ v10.3 起（2026-09-20，三次核查报告触发）：⑪ **"收编共用逻辑
    差异为 0 才叫等价。
 2. ⭐⭐ **解析器里出现"枚举白名单"就是气味。** `scheme` / 大小写 / 编码这类**输入的表层拼法**，
    不该有能力改变判定结果。凡是要枚举，先问"漏一个会怎样"——这里漏一个就从 0 high 变 9 high。
-3. ⭐ **"读到的数字"和"声称的结论"要分开核。** 本轮还发现 README/commit 声称"已加 CI"而
-   `.github/workflows/` 从未上传：PAT 缺 `workflow` scope 时 GitHub 对含 workflow 的 tree 创建
-   返回 **404**，发布脚本据此静默摘掉 CI 文件继续推。**发布后要用 `git ls-files` 核对交付物，
-   而不是相信发布脚本的 commit message。**
-   （后续：该 CI 已**主动撤掉**，理由见「公开模板仓库」一节。但这条教训与 CI 无关 ——
-   换任何一个"声称已交付 X"的场合都成立。）
+3. ⭐ **"读到的数字"和"声称的结论"要分开核。** 本轮还发现 README/commit 声称"已加上某物"、
+   实际那个文件**从未上传** —— 发布脚本遇到失败会**摘掉该文件继续推**，
+   于是"推成功了"和"东西真的在那儿"是两回事。**发布后要用 `git ls-files` 核对交付物，
+   而不是相信发布脚本的 commit message。**（换任何一个"声称已交付 X"的场合都成立。）
 
 v10.1 起（2026-09-20，外部审查报告触发）：⑨ **判据本身会随配置演进失效 —— 改配置后必须重跑判据，且改判据要用"双向回归"守住收紧面。**
 本次事故：v10 删掉了 15 条 DNS 端点路由规则（依据是 `upstreams` 全是 IP 字面量 ⇒ 不需要路由），**我验证了配置侧、没验证脚本侧** —— 而 `group_reach` 的判据有一半是「至少一个端点判给 `DIRECT`」。删掉那些规则 ⇒ 这半句永远不成立 ⇒ 插件把**自有模板**误判 `3 high`、退出码 1。报告结论准确。
@@ -680,27 +678,14 @@ skill/                                       # 本 skill（含全部脚本）
 > 就是在仓库里直接改出来的。若将来要恢复"从自用配置生成"的流程，方法论见 skill
 > `github-publish-sanitized-repo`，需按它重建脚本。
 
-📌 **本仓库刻意不挂 GitHub Actions（2026-09-21 决定）。**
-曾经加过 `.github/workflows/audit-regression.yml`，后来**主动撤掉**，两个原因：
-1. **收益接近于零**：这是个人模板仓库，不会有外部贡献者，"自动验 PR"没有服务对象；
-   而本地跑一次 `bash skill/tests/run.sh` + 5 个审计脚本只要几十秒。
-2. **`pull_request` 触发是已知攻击面**：陌生人对公开仓库提 PR、在 PR 里改 workflow 文件，
-   runner 就可能被用来跑他的代码 —— 这是 GitHub 上被滥用挖矿的经典手法
-   （2021 年那批事故里 95 个仓库中招）。GitHub 对首次贡献者默认要维护者**手动批准**才跑，
-   但**没必要留这个面**。
+📌 **全部验证都在本地完成 —— 本仓库刻意不挂 CI / 任何自动化（2026-09-21 决定）。**
+这是个人模板仓库，不会有外部贡献者，"自动验 PR"没有服务对象；而本地跑一次
+`bash skill/tests/run.sh` + 5 个审计脚本只要几十秒。少一个对外暴露的面就少一份事。
 
 ⇒ 全部验证用本地命令复现：`bash skill/tests/run.sh` + `check_egern_dns.py` /
 `audit_dns_forward.py` / `audit_ruleset_noresolve.py` / `audit_routing_coverage.py` /
 `audit_region_filters.py`。
 功能上没有任何损失。
-
-> 历史备注：**发布 `.github/workflows/` 需要 PAT 具备 `workflow` scope** —— 这正是当初那个
-> workflow 声称"已加"、实际从未上传的原因（见下面 SKILL.md 的教训条目）。此处只记录原因，
-> **不代表建议恢复 CI** —— 本仓库已明确不挂。
-> 只有 `public_repo` 时 GitHub 对「含 workflow 的 tree 创建」返回 **404**（不是 403 ——
-> 它故意不暴露存在性），`_publish_to_github.py` 会静默摘掉该文件、照常推送其余文件。
-> **发布后必须核对交付物，而不是相信脚本的 commit message**：
-> `git ls-files | grep '^\.github/'` 应至少列出 1 个文件。
 
 **脱敏清单（这五类必须洗）**：节点 server/凭据/sni/reality 公钥 → 占位；
 机场订阅 URL（含 token）→ 占位；`mitm.ca_p12` + `ca_passphrase`（个人 CA 私钥）→ **注释掉**；

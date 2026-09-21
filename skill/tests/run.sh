@@ -43,7 +43,7 @@ fi
 
 # ⚠️ 拼接路径一律用 `/`，不要用 `\\`。
 #    cygpath -w 给的是 `C:\Users\...`（反斜杠），若再拼 `\\check.py` 会得到
-#    `C:\Users\...\scripts\check.py` —— 在 MSYS 下侥幸能跑；但在 Linux/CI 上
+#    `C:\Users\...\scripts\check.py` —— 在 MSYS 下侥幸能跑；但在 Linux 上
 #    `SCRIPTS_W` 是 `/home/runner/...`，拼出来变成 `/home/runner/.../scripts\check.py`，
 #    反斜杠成了文件名的一部分 ⇒ file not found。（本仓库不挂 CI，只影响将来若在本地 Linux 上跑。）
 #    Windows 的路径 API 同时接受 `/` 和 `\`，所以统一用 `/` 两边都安全。

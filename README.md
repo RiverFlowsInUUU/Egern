@@ -233,7 +233,7 @@ egern-anti-dns-leak/
 | 项目 | 说明 |
 |:----:|:-----|
 | 🧩 **`v0` 的 `Proxy` 必须填** | 它没有 `Airport-*` 订阅槽位，`Proxy` 空着就**所有走代理的流量都不通**（其余版本填订阅即可） |
-| 🧪 **不挂 CI** | 本仓库**刻意不挂 CI**（理由见 [`skill/README.md`](skill/README.md)）—— 验证靠上面那批脚本，改完 profile 本地跑一遍即可 |
+| 🧪 **全部本地完成** | 本仓库**刻意不挂 CI / 任何自动化**（理由见 [`skill/README.md`](skill/README.md)）—— 改完 profile 本地跑一遍上面那批脚本即可 |
 
 ---
 
