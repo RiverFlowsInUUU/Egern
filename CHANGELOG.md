@@ -19,6 +19,18 @@
 
 ### 2026-09-22
 
+**修复**
+
+- ✂️ **README 移除一段「文档自述」—— 产品介绍不写我们怎么改的** —— 「📋 规则顺序」表下原有一段
+  📌 讲「**上面是分类顺序**，文件里真正的匹配顺序…」。那是改动记录 / 文档自指，不是产品说明。
+  已整段移除；其中唯一的事实（`routing_v2.4` 里「应用」之后有一条 `Proxy` 规则被
+  `disabled: true` 关掉）移入 [`DetailsReadme` §1.4](DetailsReadme/DetailsReadme.md#14-rules--匹配表与直连规则集)，
+  并顺手补全**完整的实际匹配顺序**。
+  - 📌 口径入 [`skill/reference/public-repo.md`](skill/reference/public-repo.md)（新增「README 只讲产品，不讲我们怎么改的」一节）：
+    README 不写归类自述 / 文档自指 / 评审对话 / 内部断言名。
+  - ✅ 表内数据一行未动（规则顺序表与实际匹配顺序本就一致，只缺那条 disabled 的 `Proxy`）；
+    配置与规则顺序未动。
+
 **移除**
 
 - 🗑️ **撤销 `routing_v2.5`，推荐版交回 `routing_v2.4`** —— 删除 `profiles/routing_v2.5.yaml` /

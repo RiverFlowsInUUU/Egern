@@ -105,8 +105,6 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 | 🌏 | 国内 IP | `geoip: CN`（`no_resolve`）→ `DIRECT` | 同左 |
 | 🌐 | 兜底 | `Final` | `Final` |
 
-> 📌 上面是**分类**顺序。`routing_v2.4` 里真正的匹配顺序在「按应用」之后还有一条 `Proxy.list`（`disabled: true`，不生效），随后才是 Apple → 微信。
-
 **分流版的应用规则**
 
 | 规则集 | 去向 |
