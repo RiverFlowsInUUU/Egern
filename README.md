@@ -25,7 +25,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/lazy.min.y
 🧭 **分流版** · 按应用 + 按地区
 
 ```
-https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2.5.min.yaml
+https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2.4.min.yaml
 ```
 
 选中一条，点右上角复制 → Egern **配置 → 从 URL 下载** → 粘贴。
@@ -51,12 +51,12 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2
 
 ## 🧭 分流版
 
-`profiles/routing_v2.5.yaml` · `profiles/routing_v2.5.min.yaml`
+`profiles/routing_v2.4.yaml` · `profiles/routing_v2.4.min.yaml`
 
 27 组 / 24 条规则。先按应用分，再按地区分。
 
-> 📦 **同线历代版本** —— `routing_v1` / `routing_v2` / `routing_v2.1` ~ `routing_v2.4` 保留以备对照，
-> **本版 `routing_v2.5` 为当前推荐**。逐版差异见 [`docs/07`](docs/07-文件版本沿革.md)。
+> 📦 **同线历代版本** —— `routing_v1` / `routing_v2` / `routing_v2.1` ~ `routing_v2.3` 保留以备对照，
+> **本版 `routing_v2.4` 为当前推荐**。逐版差异见 [`docs/07`](docs/07-文件版本沿革.md)。
 
 **✈️ 节点来源** —— 2 个订阅槽位
 
@@ -95,8 +95,8 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2
 
 | # | 规则 | 🧭 分流版 | 🪶 懒人版 |
 |:-:|:-----|:--------|:------|
-| 🛡️ | 白名单守卫 | `jinx white-guard` → `DIRECT` | 同左 |
-| 🚫 | 广告拦截 | `jinx ads-delta` · `AWAvenue` → `AD` | `jinx ads` · `AWAvenue` → `AD` |
+| 🛡️ | 白名单 | `jinx white-guard` → `DIRECT` | 同左 |
+| 🚫 | 广告拦截 | `jinx ads` · `AWAvenue` → `AD` | 同左 |
 | 🏠 | 内网 | `Lan` → `DIRECT` | 同左 |
 | 🤖 | 按应用 | 13 条，见下 | 1 条（`AI.list` → `AI`） |
 | 🍎 | Apple 服务 | `Apple_All_No_Resolve` → `DIRECT` | ✂️ 无 |
@@ -105,7 +105,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2
 | 🌏 | 国内 IP | `geoip: CN`（`no_resolve`）→ `DIRECT` | 同左 |
 | 🌐 | 兜底 | `Final` | `Final` |
 
-> 📌 上面是**分类**顺序。`routing_v2.5` 里真正的匹配顺序在「按应用」之后还有一条 `Proxy.list`（`disabled: true`，不生效），随后才是 Apple → 微信。
+> 📌 上面是**分类**顺序。`routing_v2.4` 里真正的匹配顺序在「按应用」之后还有一条 `Proxy.list`（`disabled: true`，不生效），随后才是 Apple → 微信。
 
 **分流版的应用规则**
 
@@ -171,7 +171,7 @@ Egern 有两套 DNS。
 
 ```
 egern/
-├── 📁 profiles/        # 16 份配置：lazy + routing_v1~v2.5，各含带注释 / 纯配置两份
+├── 📁 profiles/        # 14 份配置：lazy + routing_v1~v2.4，各含带注释 / 纯配置两份
 ├── 🖼️ icons/           # 策略组图标
 ├── 📚 docs/            # 10 篇专题
 ├── 📘 DetailsReadme/   # 完整技术文档
@@ -183,7 +183,7 @@ egern/
 
 ## 📚 规则来源
 
-- 🛑 [jinx-ads-rules](https://github.com/RiverFlowsInUUU/jinx-ads-rules) —— 广告拦截 · 白名单守卫
+- 🛑 [jinx-ads-rules](https://github.com/RiverFlowsInUUU/jinx-ads-rules) —— 广告拦截 · 白名单
 - 🧩 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) —— 应用规则集
 - 🤖 [ACL4SSR/ACL4SSR](https://github.com/ACL4SSR/ACL4SSR) —— `AI.list`
 - 🇨🇳 [Loyalsoldier/surge-rules](https://github.com/Loyalsoldier/surge-rules) —— `direct.txt` · `Lan.list`
