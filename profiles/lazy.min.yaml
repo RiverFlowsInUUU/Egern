@@ -36,29 +36,29 @@ policy_groups:
 - select:
     name: Proxy
     policies: []
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/Proxy.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/Proxy.png
 - smart:
     name: AI
     policies:
     - Proxy
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/openai.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/openai.png
 - select:
     name: AD
     policies:
     - REJECT
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/AdBlock.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/AdBlock.png
 - select:
     name: Final
     policies:
     - Proxy
     hidden: true
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/Final.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/Final.png
 rules:
 - rule_set:
-    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-white-guard.list
     policy: DIRECT
 - rule_set:
-    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-ads.list
     policy: AD
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge-RULE-SET.list

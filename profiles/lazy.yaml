@@ -83,14 +83,14 @@ policy_groups:
 - select:
     name: Proxy
     policies: []
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/Proxy.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/Proxy.png
 # AI 流量出口。routing_v2.4 里还并列着 ChatGPT / Gemini / Claude 三个独立组，
 # 本配置只保留这一个总入口，它们全部并入此处。
 - smart:
     name: AI
     policies:
     - Proxy
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/openai.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/openai.png
 # 广告拦截。只有一个子策略：REJECT（拦截）。
 # 本配置不再提供 DIRECT 兜底 —— 想临时放行某个广告域名，在 rules 里加一条更靠前的
 # domain / domain_suffix 规则指向 DIRECT 即可（别整组切走，那等于关掉全部拦截）。
@@ -98,7 +98,7 @@ policy_groups:
     name: AD
     policies:
     - REJECT
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/AdBlock.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/AdBlock.png
 # 兜底组：所有未命中规则的流量走这里，当前指向 Proxy。
 # 已隐藏：它只有一个子策略（Proxy），没有手动切换的意义。
 # 想让兜底走别的出口，改这里的 policies 即可（改完它依然是隐藏的）。
@@ -107,7 +107,7 @@ policy_groups:
     policies:
     - Proxy
     hidden: true
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/Final.png
+    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/Final.png
 # ============================================================================
 # 规则：顺序就是一切（自上而下第一条命中即决定去向）
 #   ① 白名单   ② 广告拦截   ③ 内网直连   ④ AI 分流
@@ -117,11 +117,11 @@ rules:
 # ① 白名单 —— **必须放最前面**：这些域名要抢在广告规则之前放行，
 #    否则会被下面的广告规则误杀。（42 条 DOMAIN 精确匹配）
 - rule_set:
-    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-white-guard.list
     policy: DIRECT
-# ② 广告拦截 —— 两条并列（先 jinx，后 AWAvenue），都指向 AD。
+# ② 广告拦截 —— 两条并列（先 Jinx，后 AWAvenue），都指向 AD。
 - rule_set:
-    match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
+    match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-ads.list
     policy: AD
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge-RULE-SET.list

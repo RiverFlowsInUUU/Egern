@@ -6,10 +6,10 @@
 
 *不绑节点，不绑订阅 · 让 DNS 无处可漏*
 
-[![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
-[![Profiles](https://img.shields.io/badge/Profiles-lazy%20%7C%20routing-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
-[![Groups](https://img.shields.io/badge/Groups-4%20%7C%2027-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
-[![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
+[![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
+[![Profiles](https://img.shields.io/badge/Profiles-lazy%20%7C%20routing-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
+[![Groups](https://img.shields.io/badge/Groups-4%20%7C%2027-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
+[![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
 [![License](https://img.shields.io/badge/License-MIT-dfb317?style=flat-square)](docs/10-图标与许可.md)
 
 </div>
@@ -19,13 +19,13 @@
 🪶 **懒人版** · 一个出口
 
 ```
-https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/lazy.min.yaml
+https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/lazy.min.yaml
 ```
 
 🧭 **分流版** · 按应用 + 按地区
 
 ```
-https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2.4.min.yaml
+https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2.4.min.yaml
 ```
 
 选中一条，点右上角复制 → Egern **配置 → 从 URL 下载** → 粘贴。
@@ -95,8 +95,8 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2
 
 | # | 规则 | 🧭 分流版 | 🪶 懒人版 |
 |:-:|:-----|:--------|:------|
-| 🛡️ | 白名单 | `jinx white-guard` → `DIRECT` | 同左 |
-| 🚫 | 广告拦截 | `jinx ads` · `AWAvenue` → `AD` | 同左 |
+| 🛡️ | 白名单 | `Jinx white-guard` → `DIRECT` | 同左 |
+| 🚫 | 广告拦截 | `Jinx ads` · `AWAvenue` → `AD` | 同左 |
 | 🏠 | 内网 | `Lan` → `DIRECT` | 同左 |
 | 🤖 | 按应用 | 13 条，见下 | 1 条（`AI.list` → `AI`） |
 | 🍎 | Apple 服务 | `Apple_All_No_Resolve` → `DIRECT` | ✂️ 无 |
@@ -170,7 +170,7 @@ Egern 有两套 DNS。
 ## 📁 文件结构
 
 ```
-egern/
+Egern/
 ├── 📁 profiles/        # 14 份配置：lazy + routing_v1~v2.4，各含带注释 / 纯配置两份
 ├── 🖼️ icons/           # 策略组图标
 ├── 📚 docs/            # 10 篇专题
@@ -183,7 +183,7 @@ egern/
 
 ## 📚 规则来源
 
-- 🛑 [jinx-ads-rules](https://github.com/RiverFlowsInUUU/jinx-ads-rules) —— 广告拦截 · 白名单
+- 🛑 [Jinx](https://github.com/RiverFlowsInUUU/Jinx) —— 广告拦截 · 白名单
 - 🧩 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) —— 应用规则集
 - 🤖 [ACL4SSR/ACL4SSR](https://github.com/ACL4SSR/ACL4SSR) —— `AI.list`
 - 🇨🇳 [Loyalsoldier/surge-rules](https://github.com/Loyalsoldier/surge-rules) —— `direct.txt` · `Lan.list`

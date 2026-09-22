@@ -68,7 +68,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 - **`routing_v2.3` 起已无空组**：`ChatGPT` / `Gemini` 曾是 `policies: []` 的空组，而规则直接指向它们
   ⇒ **导入即静默断流**；现已填成 `[Proxy]` + `flatten: true`（`flatten` 在这里起什么作用，
   见下方「组清单与要点」；逐段讲解见 `docs/04-模板逐段讲解.md` §4）。
-- **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
+- **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
 
 #### 组清单与要点（`routing_v2.4`）
 
@@ -491,7 +491,7 @@ S="skill/scripts"
 
 一句话：**`no-resolve` 是「IP 规则的开关」，与域名规则无关。** 判据是「这条规则能不能匹配 IP」，而不是「别人的配置里写了没写」。代价见 Q3：给 IP 规则关掉解析判定后，必须用域名规则补回来。
 
-> **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **21 个**远程规则集中，**11 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads / **jinx white-guard** / **jinx ads**，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
+> **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **21 个**远程规则集中，**11 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads / **Jinx white-guard** / **Jinx ads**，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
 
 **Q5：`Foreign-DNS` 组去哪了？我还能用吗？**
 `routing_v2` 起已整段删除（迭代 f10 起它就无引用，`routing_v1` 曾注释保留为 A/B 备用）。想用境外解析答案，需自行在 `upstreams` 里加回该组（6 个境外 DoH/DoT 端点），并把 forward 兜底 `value` 改过去。但注意：若它作兜底且代理未就绪，会掉进明文 `:53` —— 迭代 f10 默认用国内组兜底正是为了避免这条路径。

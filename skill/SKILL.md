@@ -1,6 +1,6 @@
 ---
 name: egern-profile-dns-hardening
-description: 审计并加固 Egern 配置（Profile.yaml）的 DNS 泄露面与分流覆盖。触发词：Egern 配置、Egern 防 DNS 泄露、Egern dns 段、proxy_nameservers、hijack_dns、bootstrap 泄露、Egern dnsleak、节点域名明文解析、Egern 的 DNS 泄露到运营商（电信/联通/移动）、leak test 显示 china telecom、upstream 显示 bootstrap、日志里规则判定正常但 upstream 是 bootstrap、延迟测试域名泄露、cp.cloudflare.com 泄露、系统 DNS 回退泄露、Egern YAML 配置优化、egern no_resolve 路由、规则集 IP 条目缺 no-resolve、Apple_All.list 强制解析、blackmatrix7 No_Resolve 变体、rule_set 触发 DNS 解析、国内域名走代理、国内网站不是直连、chinamax 只有 ip 走直连、国内域名全落 final、加了 no_resolve 之后分流坏了、ChinaMax.list 没有域名规则、ChinaMax_All_No_Resolve、分流覆盖审计。
+description: 审计并加固 Egern 配置（Profile.yaml）的 DNS 泄露面与分流覆盖。触发词：Egern 配置、Egern 防 DNS 泄露、Egern dns 段、proxy_nameservers、hijack_dns、bootstrap 泄露、Egern dnsleak、节点域名明文解析、Egern 的 DNS 泄露到运营商（电信/联通/移动）、leak test 显示 china telecom、upstream 显示 bootstrap、日志里规则判定正常但 upstream 是 bootstrap、延迟测试域名泄露、cp.cloudflare.com 泄露、系统 DNS 回退泄露、Egern YAML 配置优化、Egern no_resolve 路由、规则集 IP 条目缺 no-resolve、Apple_All.list 强制解析、blackmatrix7 No_Resolve 变体、rule_set 触发 DNS 解析、国内域名走代理、国内网站不是直连、chinamax 只有 ip 走直连、国内域名全落 final、加了 no_resolve 之后分流坏了、ChinaMax.list 没有域名规则、ChinaMax_All_No_Resolve、分流覆盖审计。
 agent_created: true
 ---
 
@@ -320,7 +320,7 @@ Egern profile 常含**超长单行**（`mitm.ca_p12` 的 base64 CA 证书，可�
 - DNS 机制：`https://egernapp.com/docs/configuration/dns`（**核心页**，两条路径 + bootstrap + proxy_nameservers + block_ips + hosts 全在此）
 - 规则字段：`https://egernapp.com/docs/configuration/rules`（`no_resolve` 适用范围、逻辑规则 `and`/`or`/`not`、rule_set 内部字段）
 - 顶层字段全表：`https://egernapp.com/docs/configuration/example`（**注意键名与 DNS 页不一致**）
-- 社区参考实现（中国网络环境的最佳实践，DNS 段写法值得对照）：`https://repcz.github.io/egern`
+- 社区参考实现（中国网络环境的最佳实践，DNS 段写法值得对照）：`https://repcz.github.io/Egern`
 - sitemap（找页面用）：`https://doc.egernapp.com/sitemap.xml`
 
 ⚠️ `https://egernapp.com/zh-CN/docs` 和 `/docs/configuration/general` 是 **404**；顶层字段只能从 `configuration/example` 页获取。DNS 页有中文版 `/zh-CN/docs/configuration/dns`。

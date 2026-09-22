@@ -13,23 +13,23 @@
 > 上表只讲**文件名**。**迭代谱系**（`f1`~`f10`）是另一个维度，2026-09-22 起统一用 `f` 前缀 ——
 > 历史条目里原本写作 `v1`…`v10` 的迭代编号也已一并改为 `f`（只改标签，事实未动）。
 >
-> 🏷️ **仓库曾用名**：`egern-anti-dns-leak` → **`egern`**（2026-09-22 改名）。
+> 🏷️ **仓库曾用名**：`egern-anti-dns-leak` → **`Egern`**（2026-09-22 改名）。
 > GitHub 对改名仓保留 **301 跳转**，**旧订阅地址与图标 URL 仍然可用**；
-> 仓库内的引用已全部改成新名，新写地址请用 `.../RiverFlowsInUUU/egern/...`。
+> 仓库内的引用已全部改成新名，新写地址请用 `.../RiverFlowsInUUU/Egern/...`。
 
 ### 2026-09-22
 
 **移除**
 
 - 🗑️ **撤销 `routing_v2.5`，推荐版交回 `routing_v2.4`** —— 删除 `profiles/routing_v2.5.yaml` /
-  `routing_v2.5.min.yaml`。v2.5 相对 v2.4 的**唯一**差异就是广告拦截规则集换用 `jinx-ads-rules` 的
+  `routing_v2.5.min.yaml`。v2.5 相对 v2.4 的**唯一**差异就是广告拦截规则集换用 `Jinx` 的
   **差集版**清单（`surge-ads.list` → `surge-ads-delta.list`）；而差集版已于同日被上游删除
   （该 URL 现已 **404**）⇒ 改回黑名单后两者**逐字相同**，v2.5 沦为纯冗余版本。
   留着它就是「同一件事写在两个地方，早晚只会改一处」。
   ⚠️ **订阅地址变更**：指向 `profiles/routing_v2.5(.min).yaml` 的地址会 404，改用
   `profiles/routing_v2.4(.min).yaml`。`routing_v2.4` 的表头本来就写着「正式版 · 推荐」，
   该文件**一字未动**。详见 [`docs/07`](docs/07-文件版本沿革.md) 的「已撤销」。
-- 🏷️ **术语与上游对齐** —— 「白名单守卫」→「**白名单**」（与 `jinx-ads-rules` 的用词统一）。
+- 🏷️ **术语与上游对齐** —— 「白名单守卫」→「**白名单**」（与 `Jinx` 的用词统一）。
   文件名 `surge-white-guard.list` 未动，订阅地址不受影响。
 
 **变更**
@@ -38,10 +38,10 @@
   `v2` / `v2.1` ~ `v2.5` 同理（`.min` 一并改），共 14 个文件。
   **配置内容逐字未变**（有效配置逐行 diff 为空），只动文件名与注释头。
   原因：`lazy` 退出 `vN` 体系后（见 2026-09-21），`v1`…`v2.5` 不再有「起点」，读起来像一串孤立的旧版号；
-  加前缀明确它们是**同一条线**，也与姊妹项目 `surge` 的 `routing.conf` 命名对齐。
-- 📝 **首页说法与 `surge` 对齐** —— 「两份配置」改为
+  加前缀明确它们是**同一条线**，也与姊妹项目 `Surge` 的 `routing.conf` 命名对齐。
+- 📝 **首页说法与 `Surge` 对齐** —— 「两份配置」改为
   🪶 **懒人版 · 一个出口** / 🧭 **分流版 · 按应用 + 按地区**，两节标题随之改为「懒人版」「分流版」；
-  懒人版一节移到分流版之前，与 surge 的排布一致。
+  懒人版一节移到分流版之前，与 Surge 的排布一致。
 - 📝 **文档全线改用新命名** —— README / `docs/04`·`06`·`07`·`08`·`09` / `DetailsReadme` /
   `skill/` 共 12 个文件。⚠️ **`docs/06` 与 `DetailsReadme` §3 的「配置迭代谱系」是另一个维度** ——
   这次**刻意未动**，当日稍后单独处理（见下条）。
@@ -58,10 +58,14 @@
   **防 DNS 泄露是它们的特色，不是全部定位**。README 首页标题由「Egern 防 DNS 泄露配置」
   改为「Egern 配置模板」，副标题摆出两个模板、DNS 零泄露降为特色一句；
   badge 行把 `Profiles` / `Groups` 提到 `DNS` 之前。
-- 📦 **仓库改名 `egern-anti-dns-leak` → `egern`** —— 原名把定位写死在「防泄露」上。
-  ⚠️ **旧链接不会失效**：GitHub 对改名仓保留 301 跳转，旧订阅地址与图标 URL 仍能下载。
-  仓内 **557 处**引用（图标 URL / 订阅地址 / 文档自引用 / 姊妹仓交叉引用）已全部改为新名。
-  姊妹项目 `surge-anti-dns-leak` 同步改名为 `surge`。
+- 📦 **仓库改名 `egern-anti-dns-leak` → `Egern`** —— 原名把定位写死在「防泄露」上；
+  同日随后做了**大小写规范化**（`egern` → `Egern`），与官方写法一致。
+  ⚠️ **旧链接不会失效**：GitHub 对改名仓保留 301 跳转，旧订阅地址与图标 URL 仍能下载
+  （**实测**：raw 旧名 HTTP 200、jsDelivr 旧名 HTTP 200、`github.com` 旧名 301 → 新名）。
+  仓内引用共改两轮 —— 首轮 557 处（图标 URL / 订阅地址 / 文档自引用 / 姊妹仓交叉引用），
+  本轮再改 **562 处**。姊妹项目 `surge-anti-dns-leak` 同步改名为 `Surge`。
+  - 📌 **代码标识符与文件名保持小写**：`check_egern_dns.py` / `_egern_common.py` /
+    `egern-profile-dns-hardening` 等一律未动，只改文本里的裸称呼。
 - 📝 **GitHub 仓库描述同步修正** —— 改为「两个模板 + DNS 特色」的说法，
   并修掉两处过期数字（加固清单 17 → **18** 项、审计脚本 6 → **5** 个）。
 
@@ -77,7 +81,7 @@
   ⚠️ **未实测 Egern 是否容忍裸域名文件**（其 `rule_set` 文档未明确）；但换成 RULE-SET 版在两种情形下
   都正确 —— 格式确定匹配，且条目更全。判据依据 Surge 官方语法：`RULE-SET` 可含所有类型子规则，
   `DOMAIN-SET` 仅可含 `DOMAIN` / `DOMAIN-SUFFIX` 两种形式的内容。
-  姊妹仓 `surge` 无此问题（全部使用 `RULE-SET`，且未引用 AWAvenue），已核对。
+  姊妹仓 `Surge` 无此问题（全部使用 `RULE-SET`，且未引用 AWAvenue），已核对。
 
 > ⚠️ **旧 raw 链接已失效** —— 原先指向 `profiles/v2.5.min.yaml` 的订阅地址现在会 404，
 > 改用 `profiles/routing_v2.5.min.yaml`。
@@ -99,7 +103,7 @@
 - ✨ **`v2.2`** —— 机场订阅槽位 **4 → 2**（删 `Airport-C` / `Airport-Free`），`MAX` 改为「带节点筛选的 `Smart`」、不再自带订阅 URL；`dns` 段与规则逐行未变。
 - ✨ **`v2.3`** —— `v2.2` 的修正后继，修 4 处（`MAX` 的筛选规则、`Korea` 的冗余上游、`Smart` 的 `flatten`、`ChatGPT` / `Gemini` 的空组）；`dns` 段与规则逐行未变。**导入前只剩订阅地址要填**，明细见 [`docs/04` §4](docs/04-模板逐段讲解.md#4-policy_groups-段)。
 - ✨ **`v2.4`** —— `v2.3` 的补全后继：给全部 21 条 `rule_set` 补上 `update_interval: 86400`，规则集改为**按天自动刷新**；`dns` 段、规则内容与顺序、`policy_groups` 段逐字未变。
-- ✨ **`v2.5`（当前推荐版）** —— `v2.4` 的后继：广告拦截规则集换用 `jinx-ads-rules` 的 **delta 版**清单（`surge-ads.list` → `surge-ads-delta.list`，路径同时改为显式的 `refs/heads/main/`）；`dns` 段、`policy_groups` 段与其余规则逐字未变。
+- ✨ **`v2.5`（当前推荐版）** —— `v2.4` 的后继：广告拦截规则集换用 `Jinx` 的 **delta 版**清单（`surge-ads.list` → `surge-ads-delta.list`，路径同时改为显式的 `refs/heads/main/`）；`dns` 段、`policy_groups` 段与其余规则逐字未变。
 
 **变更**
 

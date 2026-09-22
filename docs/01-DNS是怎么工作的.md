@@ -237,6 +237,6 @@ Egern 有**两条互不相通**的解析路径。**不理解这个，就会改�
 - DNS 机制：`https://egernapp.com/docs/configuration/dns`（**核心页**）
 - 规则字段：`https://egernapp.com/docs/configuration/rules`（`no_resolve` 适用范围、`rule_set` 内部字段）
 - 顶层字段全表：`https://egernapp.com/docs/configuration/example`（注意键名与 DNS 页**不一致**）
-- 社区参考实现：`https://repcz.github.io/egern`
+- 社区参考实现：`https://repcz.github.io/Egern`
 
 ⚠️ `https://egernapp.com/zh-CN/docs` 与 `/docs/configuration/general` 是 **404**；顶层字段只能从 `configuration/example` 页获取。
