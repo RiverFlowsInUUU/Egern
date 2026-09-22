@@ -1,4 +1,4 @@
-# DetailsReadme · Egern 防 DNS 泄露配置模板 · 完整技术文档
+# DetailsReadme · Egern 配置模板 · 完整技术文档
 
 > **这份文档的定位**：`README.md` 只保留了「配置框架 + 防泄露原理」的精华，有意省略了大量推导、数据、谱系与工程方法。
 > 本文档是 README 的**详版 / 补集**——把那些被省略的信息全部展开、讲清楚。
@@ -68,7 +68,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 - **`routing_v2.3` 起已无空组**：`ChatGPT` / `Gemini` 曾是 `policies: []` 的空组，而规则直接指向它们
   ⇒ **导入即静默断流**；现已填成 `[Proxy]` + `flatten: true`（`flatten` 在这里起什么作用，
   见下方「组清单与要点」；逐段讲解见 `docs/04-模板逐段讲解.md` §4）。
-- **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
+- **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
 
 #### 组清单与要点（`routing_v2.5`）
 

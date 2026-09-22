@@ -1,15 +1,15 @@
 <div align="center">
 
-# 🛡️ Egern 防 DNS 泄露配置
+# 🛡️ Egern 配置模板
 
-**让 DNS 无处可漏**
+**🪶 懒人版 · 🧭 分流版**
 
-*不绑节点，不绑订阅*
+*不绑节点，不绑订阅 · 让 DNS 无处可漏*
 
-[![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
-[![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
-[![Profiles](https://img.shields.io/badge/Profiles-lazy%20%7C%20routing-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
-[![Groups](https://img.shields.io/badge/Groups-4%20%7C%2027-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
+[![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
+[![Profiles](https://img.shields.io/badge/Profiles-lazy%20%7C%20routing-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
+[![Groups](https://img.shields.io/badge/Groups-4%20%7C%2027-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
+[![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/egern)
 [![License](https://img.shields.io/badge/License-MIT-dfb317?style=flat-square)](docs/10-图标与许可.md)
 
 </div>
@@ -19,13 +19,13 @@
 🪶 **懒人版** · 一个出口
 
 ```
-https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/lazy.min.yaml
+https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/lazy.min.yaml
 ```
 
 🧭 **分流版** · 按应用 + 按地区
 
 ```
-https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/routing_v2.5.min.yaml
+https://raw.githubusercontent.com/RiverFlowsInUUU/egern/main/profiles/routing_v2.5.min.yaml
 ```
 
 选中一条，点右上角复制 → Egern **配置 → 从 URL 下载** → 粘贴。
@@ -170,7 +170,7 @@ Egern 有两套 DNS。
 ## 📁 文件结构
 
 ```
-egern-anti-dns-leak/
+egern/
 ├── 📁 profiles/        # 16 份配置：lazy + routing_v1~v2.5，各含带注释 / 纯配置两份
 ├── 🖼️ icons/           # 策略组图标
 ├── 📚 docs/            # 10 篇专题

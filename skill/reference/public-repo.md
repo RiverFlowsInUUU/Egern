@@ -6,7 +6,7 @@
 
 自用配置已脱敏发布为公开模板 + 文档 + 本 skill：
 
-**https://github.com/RiverFlowsInUUU/egern-anti-dns-leak**
+**https://github.com/RiverFlowsInUUU/egern**
 
 ```
 README.md                                   # 三条铁律 + 一图看懂回退链
