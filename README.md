@@ -2,9 +2,7 @@
 
 # 🛡️ Egern 配置模板
 
-**🪶 懒人版 · 🧭 分流版**
-
-*不绑节点，不绑订阅 · 让 DNS 无处可漏*
+*让 DNS 无处可漏*
 
 [![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
 [![Profiles](https://img.shields.io/badge/Profiles-lazy%20%7C%20routing-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
@@ -14,78 +12,42 @@
 
 </div>
 
-## 📥 两份配置
+## 📥 两全其美，皆合心意
 
-🪶 **懒人版** · 一个出口
+🪶 **懒人版** · 至简 · 省心
 
 ```
 https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/lazy.min.yaml
 ```
 
-🧭 **分流版** · 按应用 + 按地区
+🧭 **分流版** · 可控 · 随心
 
 ```
 https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2.4.min.yaml
 ```
 
-选中一条，点右上角复制 → Egern **配置 → 从 URL 下载** → 粘贴。
-
 ---
 
-## 🪶 懒人版
+## 🧭 井然有序
 
-`profiles/lazy.yaml` · `profiles/lazy.min.yaml`
+懒人版 4 组、分流版 27 组，自上而下：
 
-4 组 / 9 条规则。全部流量走一个出口。**没有版本号，长期沿用。**
+| 组 | 🪶 懒人版 | 🧭 分流版 |
+|:---|:---:|:---:|
+| 🚀 `Proxy` | ✅ | ✅ |
+| ⚡ `Smart` | - | ✅ |
+| 🤖 `ChatGPT` · `Gemini` · `Claude` · `AI` | ✅ | ✅ |
+| 🎵 `Spotify` · 🎶 `YouTubeMusic` · ▶️ `YouTube` | - | ✅ |
+| 🐙 `GitHub` · 🔎 `Google` · 🪟 `Microsoft` | - | ✅ |
+| ✈️ `Telegram` · 🐦 `Twitter` · 💚 `WeChat` | - | ✅ |
+| 🛑 `AD` | ✅ | ✅ |
+| 🇭🇰 `Hong Kong` · 🇺🇸 `USA` · 🇯🇵 `Japan` · 🇨🇳 `Taiwan`<br>🇸🇬 `Singapore` · 🇰🇷 `Korea` · 🇦🇶 `Other Regions` | - | ✅ |
+| 💧 `MAX` | - | ✅ |
+| 🌐 `Final` | ✅ | ✅ |
 
-| | |
-|:--|:--|
-| 🧭 `Proxy` | 唯一出口，空槽位需自己填 |
-| 🤖 `AI` | AI 流量独立出口 |
-| 🛑 `AD` | 只留 `REJECT`，想放行某域名加更靠前的直连规则 |
-| 🌐 `Final` | 兜底（`Proxy`，已隐藏） |
-
-没有订阅槽位，`Proxy` 必须自己填节点。
-
----
-
-## 🧭 分流版
-
-`profiles/routing_v2.4.yaml` · `profiles/routing_v2.4.min.yaml`
-
-27 组 / 24 条规则。先按应用分，再按地区分。
-
-> 📦 **同线历代版本** —— `routing_v1` / `routing_v2` / `routing_v2.1` ~ `routing_v2.3` 保留以备对照，
-> **本版 `routing_v2.4` 为当前推荐**。逐版差异见 [`docs/07`](docs/07-文件版本沿革.md)。
-
-**✈️ 节点来源** —— 2 个订阅槽位
-
-- 🅰️ `Airport-A` · `external` · `smart` —— 订阅槽位 ①
-- 🅱️ `Airport-B` · `external` · `smart` —— 订阅槽位 ②（另带一条 `urls_disabled` 示例）
-
-| | |
-|:--|:--|
-| 🧭 `Proxy` | 主入口，手动选路（首项 `MAX`） |
-| 🧠 `Smart` | 智能选优，`flatten` 展开到节点级 |
-| ⚡ `MAX` | 带筛选的 `Smart`，只留倍率 < 1 |
-| 🛑 `AD` | 手动开关（`REJECT` / `DIRECT`） |
-| 🌐 `Final` | 兜底，未命中的流量走这里 |
-
-**🤖 AI 组**
-
-- 🧩 `AI` · `smart` —— 总入口
-- 💬 `ChatGPT` · `fallback` —— `Proxy` + `flatten`，节点级故障转移
-- ✨ `Gemini` · `fallback` —— 同上（`Google` 组首项，默认选中）
-- 🧠 `Claude` · `smart` —— 默认指向 `Taiwan`
-
-**🌍 地区组** —— `smart` + 正则筛节点，共 7 组
-
-- 🇭🇰 `Hong Kong` · 🇺🇸 `USA` · 🇯🇵 `Japan` · 🇹🇼 `Taiwan` · 🇸🇬 `Singapore` · 🇰🇷 `Korea`
-- 🗺️ `Other Regions` —— **负向断言**，排除以上全部
-
-导入前只需填两处：订阅槽位的 `urls`（把占位 `sub.example.com` 换掉）· 可选填 `proxies` 自建节点。
-
-> 📄 **两份形态** —— `.yaml`（带注释）与 `.min.yaml`（纯配置）内容一致，只差注释，取用其一即可。
+> 🪶 懒人版无订阅槽位，`Proxy` 自己填节点，长期沿用无版本号。
+> 🧭 分流版 = `routing_v2.4`（历代见 [`docs/07`](docs/07-文件版本沿革.md)），导入前填 2 处订阅槽位 `urls`（`Airport-A` / `Airport-B`）。
+> 🔍 选路、地区筛法与规则顺序见 [`docs/04`](docs/04-模板逐段讲解.md)；带注释的原始文件见 [`profiles/`](profiles/)。
 
 ---
 
@@ -122,7 +84,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 
 ---
 
-## 🌐 DNS 防泄漏
+## 🌐 隐私至上 · 无 DNS 泄露
 
 | | |
 |:--|:--|
