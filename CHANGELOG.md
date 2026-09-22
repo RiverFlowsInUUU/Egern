@@ -65,6 +65,20 @@
 - 📝 **GitHub 仓库描述同步修正** —— 改为「两个模板 + DNS 特色」的说法，
   并修掉两处过期数字（加固清单 17 → **18** 项、审计脚本 6 → **5** 个）。
 
+**修复**
+
+- 🐛 **AWAvenue 广告规则集换用 RULE-SET 版** —— **14 份 profile + 5 个测试 fixture** 的地址由
+  `.../Filters/AWAvenue-Ads-Rule-Surge.list` 改为 `.../Filters/AWAvenue-Ads-Rule-Surge-RULE-SET.list`。
+  两者同仓同源、**格式不同**：前者是**裸域名**（`.8le8le.com`，前导点 = 该域及其所有子域），
+  对应 Surge 的 **`DOMAIN-SET`** 规则类型；后者是 `DOMAIN,xxx` 规则行，对应 **`RULE-SET`**。
+  而 profile 用的是 `rule_set`（消费 Surge RULE-SET 格式）⇒ 原地址与消费方式不匹配。
+  同时 RULE-SET 版**内容更全：965 条 vs 961 条** —— 多出的 4 条是无法写成裸域名的
+  `DOMAIN-KEYWORD` / `DOMAIN-SUFFIX` 条目。
+  ⚠️ **未实测 Egern 是否容忍裸域名文件**（其 `rule_set` 文档未明确）；但换成 RULE-SET 版在两种情形下
+  都正确 —— 格式确定匹配，且条目更全。判据依据 Surge 官方语法：`RULE-SET` 可含所有类型子规则，
+  `DOMAIN-SET` 仅可含 `DOMAIN` / `DOMAIN-SUFFIX` 两种形式的内容。
+  姊妹仓 `surge` 无此问题（全部使用 `RULE-SET`，且未引用 AWAvenue），已核对。
+
 > ⚠️ **旧 raw 链接已失效** —— 原先指向 `profiles/v2.5.min.yaml` 的订阅地址现在会 404，
 > 改用 `profiles/routing_v2.5.min.yaml`。
 > （⚠️ 该文件**同日又随 `routing_v2.5` 撤销而删除** —— 现应用 `profiles/routing_v2.4.min.yaml`，见本节顶部。）

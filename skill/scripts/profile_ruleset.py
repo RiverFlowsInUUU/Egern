@@ -13,6 +13,13 @@
 而该规则排在 `default` 之前 ⇒ 每个走到它的域名都被强制本地解析一次（泄露源）。
 **这类缺陷用眼睛读 profile 是看不见的，必须下载规则集本身、数条目。**
 
+**文件名也会骗人 —— 尤其 AWAvenue。** 该仓库 `Filters/` 下同一份数据有两种写法：
+`AWAvenue-Ads-Rule-Surge.list` 是**裸域名**（`.8le8le.com`，前导点 = 该域及其所有子域），
+对应 Surge 的 `DOMAIN-SET` 规则类型；`AWAvenue-Ads-Rule-Surge-RULE-SET.list` 才是 `DOMAIN,xxx`
+规则行，对应 `RULE-SET`。**profile 里的 `rule_set` 消费的是后者**（2026-09-22 修正过这个地址）。
+⚠️ 本脚本会把裸域名**自动归一化**成 `DOMAIN-SUFFIX,` 再统计（见 `split_entries`），
+所以**它看不出这类错** —— 「地址里的文件格式与消费方式是否匹配」只能按官方语法人工核。
+
 因此任何一次「要新增/替换 rule_set」之前，先跑本脚本：
 
     python profile_ruleset.py ChinaMax.list
