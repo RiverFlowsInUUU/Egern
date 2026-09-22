@@ -159,15 +159,14 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 
 ## 📁 文件结构
 
-```
-Egern/
-├── 📁 profiles/        # 14 份配置：lazy + routing_v1~v2.4，各含带注释 / 纯配置两份
-├── 🖼️ icons/           # 策略组图标
-├── 📚 docs/            # 10 篇专题
-├── 📘 DetailsReadme/   # 完整技术文档
-├── 🗓️ CHANGELOG.md
-└── 🧪 skill/           # 审计脚本 + 回归测试
-```
+| | 路径 | 内容 |
+|:--:|:-----|:-----|
+| 📁 | [`profiles/`](profiles/) | 14 份配置：lazy + routing_v1~v2.4，各含带注释 / 纯配置 |
+| 🖼️ | [`icons/`](icons/) | 策略组图标 |
+| 📚 | [`docs/`](docs/) | 10 篇专题 |
+| 📘 | [`DetailsReadme/`](DetailsReadme/DetailsReadme.md) | 完整技术文档 |
+| 🗓️ | [`CHANGELOG.md`](CHANGELOG.md) | 版本记录 |
+| 🧪 | [`skill/`](skill/) | 审计脚本 + 回归测试 |
 
 ---
 

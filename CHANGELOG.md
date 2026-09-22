@@ -24,6 +24,8 @@
 - 🪟 **README 去掉「防泄露原理」整节 —— 门面只讲功能** —— 原 `## 🌐 防泄露原理`（两套 DNS 分工表 + `bootstrap` 两个用途与堵法表）是机制推导，不该出现在产品页。改为 `## 🌐 DNS 防泄漏` 的**能力清单**：`hijack_dns: '*'` 全量接管 · 4 个加密端点全为 IP 字面量 · catch-all 兜住全部域名、永不落到 `bootstrap` · `proxy_nameservers` 专用通道强制直连 · `no_resolve` 与 `direct.txt` 成对交付 · 审计读数 **0 high**、路由覆盖 **15/15**。只讲「得到什么」，不讲「为什么」。
   - 📌 口径入 [`skill/reference/public-repo.md`](skill/reference/public-repo.md)：合法的产品内容也要分层，`README` 只放「有什么 · 怎么用 · 防在哪」；连「原理」二字都不出现在门面标题里。
   - ✅ 配置与 `dns` 段一行未动；推导仍在 [`DetailsReadme` §2](DetailsReadme/DetailsReadme.md#2-防泄露原理从机制到推导)。
+- 🔗 **README「文件结构」改为可点击跳转** —— 原先是 fenced code block 里的目录树，而 GitHub **不解析代码块内的 markdown**，那些路径一个都点不动、只能靠手翻。改为表格（图标 / 路径 / 说明），路径列写成相对链接，点一下直达对应目录或文件 —— `profiles/` · `icons/` · `docs/` · `DetailsReadme/` · `CHANGELOG.md` · `skill/` 六个入口全部可点。三仓同步同一版式。
+  - 📌 顺带用修正后的 `check_links.py`（借姊妹仓 `Surge` 的）跑了一遍本仓全部 markdown：21 个文件 / 108 条相对链接与锚点**全部可解析**。此前它报 `#4-policy_groups-段`、`#13-policy_groups--四种类型组间引用图标` 两条「失效」是**脚本自身的 bug**（下划线被误删），链接本来就是对的 —— 详见 `Surge` 仓 CHANGELOG 同日「`check_links.py` 锚点算法三处修正」。
 
 **修复**
 
