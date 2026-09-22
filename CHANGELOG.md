@@ -19,6 +19,12 @@
 
 ### 2026-09-22
 
+**变更**
+
+- 🪟 **README 去掉「防泄露原理」整节 —— 门面只讲功能** —— 原 `## 🌐 防泄露原理`（两套 DNS 分工表 + `bootstrap` 两个用途与堵法表）是机制推导，不该出现在产品页。改为 `## 🌐 DNS 防泄漏` 的**能力清单**：`hijack_dns: '*'` 全量接管 · 4 个加密端点全为 IP 字面量 · catch-all 兜住全部域名、永不落到 `bootstrap` · `proxy_nameservers` 专用通道强制直连 · `no_resolve` 与 `direct.txt` 成对交付 · 审计读数 **0 high**、路由覆盖 **15/15**。只讲「得到什么」，不讲「为什么」。
+  - 📌 口径入 [`skill/reference/public-repo.md`](skill/reference/public-repo.md)：合法的产品内容也要分层，`README` 只放「有什么 · 怎么用 · 防在哪」；连「原理」二字都不出现在门面标题里。
+  - ✅ 配置与 `dns` 段一行未动；推导仍在 [`DetailsReadme` §2](DetailsReadme/DetailsReadme.md#2-防泄露原理从机制到推导)。
+
 **修复**
 
 - ✂️ **README 移除一段「文档自述」—— 产品介绍不写我们怎么改的** —— 「📋 规则顺序」表下原有一段

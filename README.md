@@ -142,24 +142,16 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 
 ---
 
-## 🌐 防泄露原理
+## 🌐 DNS 防泄漏
 
-Egern 有两套 DNS。
-
-| DNS | 负责 | 上游怎么选 |
-|:---:|:-----|:-----------|
-| 🌍 **默认 DNS** | 业务流量解析 | 按 `dns.forward` 匹配；未命中回退 `bootstrap` |
-| 🔐 **代理 DNS** | 只解析节点 `server` 里的域名 | `dns.proxy_nameservers`，**强制直连** |
-
-明文 `UDP:53` 只有 `bootstrap` 一条出口，而官方规定它有且只有两个用途：解析上游端点的主机名、作为最终回退。两条都堵上即可。
-
-| 用途 | 机制 | 堵法 |
-|:----:|:-----|:-----|
-| 🚪 引导解析 | 端点写成主机名时，必须先明文解析一次 | `upstreams` / `proxy_nameservers` 全写 IP 字面量 |
-| 🚪 最终回退 | 域名未命中 `forward` 时回退 `bootstrap` | 一条 `domain_wildcard: '*'` 的 catch-all 兜住全部域名 |
-| 🚪 规则触发解析 | 不带 `no_resolve` 的 IP 类规则会主动发起解析 | IP 类规则一律带 `no_resolve`，另配 `direct.txt` 补回域名判定 |
-
-启动期、节点域名解析、业务解析 —— 三条路径都不再接触明文 `:53`。
+| | |
+|:--|:--|
+| 🚫 设备硬编码的明文 `:53` | `hijack_dns: '*'` 全量接管 |
+| 🔐 解析上游 | 4 个加密端点（DoH + DoT × 2 机构），全部 IP 字面量 |
+| 🛡️ 明文回退 | catch-all 兜住全部域名，永不落到 `bootstrap` |
+| 🧭 节点域名 | `proxy_nameservers` 专用通道、强制直连，与业务解析分离 |
+| 🧩 规则匹配 | IP 类规则带 `no_resolve`；国内域名由 `direct.txt` 域名规则接住，两者成对交付 |
+| 📋 审计读数 | 自带审计脚本 **0 high** · 路由覆盖 **15/15** |
 
 > 🔍 完整推导见 [`DetailsReadme` §2](DetailsReadme/DetailsReadme.md#2-防泄露原理从机制到推导) 与 [`docs/02`](docs/02-DNS为什么会泄露.md)。
 
