@@ -1,4 +1,16 @@
-ipv6: false
+# ================================================================ routing_v2.2 的唯一改动
+# 本版 = **routing_v2.1 的「机场槽位精简版」**，dns 段 / 规则 / 服务组全部逐字相同。
+# 只动 policy_groups 里的订阅入口，把 4 个机场槽位压到 2 个：
+#   【删】Airport-C     —— 引用面只有 Smart / Japan 两个组
+#   【删】Airport-Free  —— 引用面只有 Smart 一个组
+#   【改】Smart         —— 上游从「Airport-Free · Airport-C」改为「Airport-A · Airport-B」
+#   【改】Japan         —— 上游去掉 Airport-C，只剩「Airport-A · Airport-B」
+#   【改】MAX           —— 不再自带订阅 URL，改为「带节点筛选的 Smart」：
+#                          与 Smart 同构（smart + 上游指向 A/B），额外用 filter
+#                          只保留低倍率节点（0.01 / 0.1），即「筛选后再智能选优」。
+# ⇒ 机场订阅入口 4 → 2（Airport-A / Airport-B），URL 占位符 9 → 4 条。
+#    保留 A、B 的理由：A 被 8 个组引用、B 被 7 个，是地区组的共同上游；
+#    C 与 Free 只服务 Smart，删掉后 Smart 仍有 A/B 可用，能力不降。
 vif_only: true
 hijack_dns:
 - '*'
@@ -6,9 +18,6 @@ geoip_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Count
 asn_db_url: https://raw.githubusercontent.com/Loyalsoldier/geoip/release/GeoLite2-ASN.mmdb
 proxy_latency_test_url: http://cp.cloudflare.com/generate_204
 direct_latency_test_url: http://connectivitycheck.platform.hicloud.com/generate_204
-compat_route: false
-include_all_networks: false
-include_apns: false
 real_ip_domains:
 # 这几个域名不做 Fake IP 映射，交给系统解析。
 # Windows/Apple 的推送与内网发现走的是「隧道外」的链路（include_apns: false），
@@ -17,9 +26,9 @@ real_ip_domains:
 - '*.local'
 - '*.push.apple.com'
 dns:
-  # ================================================================ v2 的唯一改动
-  # v2 与 v1 的差别**只在这一节**，其余顶层段逐字相同。
-  # v1 的 dns 段是 40 行；本节压到 22 行，防泄露能力经仓库自带审计脚本实测**逐项等价**
+  # ================================================================ routing_v2 的唯一改动
+  # routing_v2 与 routing_v1 的差别**只在这一节**，其余顶层段逐字相同。
+  # routing_v1 的 dns 段是 40 行；本节压到 22 行，防泄露能力经仓库自带审计脚本实测**逐项等价**
   # （check_egern_dns.py 与 audit_dns_forward.py 结论一致，差异仅为被删端点的逐条检查项）。
   #
   # 取舍判据只有一条：
@@ -32,7 +41,7 @@ dns:
   #   用途① 用「端点全写 IP 字面量」消灭；用途② 用「forward 兜底指向一个不依赖
   #   代理也活着的加密组」堵死。
   #
-  # v1 → v2 删掉的两处，以及为什么删了也安全：
+  # routing_v1 → routing_v2 删掉的两处，以及为什么删了也安全：
   #   【删】hosts: 整段（10 行）—— dns.alidns.com / doh.pub / dot.pub 这三个映射
   #        在本配置里**没有任何引用点**：upstreams 与 proxy_nameservers 的端点
   #        全是 IP 字面量，没有任何地方去解析这三个主机名。它的原始用途是「当你想写
@@ -107,79 +116,61 @@ policy_groups:
     - Japan
     - Korea
     - Other Regions
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Proxy.png
-    hidden: false
 - smart:
     name: Smart
     policies:
-    - Airport-Free
-    - Airport-C
-    flatten: false
+    - Airport-A
+    - Airport-B
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Auto.png
-    hidden: false
 - fallback:
     name: ChatGPT
     policies: []
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/openai.png
-    hidden: false
 - fallback:
     name: Gemini
     policies: []
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/gemini-color.png
-    hidden: false
 - smart:
     name: Claude
     policies:
     - Taiwan
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/claude-color.png
-    hidden: false
 - smart:
     name: AI
     policies:
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/grok.png
-    hidden: false
 - select:
     name: Spotify
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Spotify.png
-    hidden: false
 - select:
     name: YouTubeMusic
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/YouTubeMusic.png
-    hidden: false
 - select:
     name: YouTube
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/YouTube.png
-    hidden: false
 - select:
     name: GitHub
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/GitHub.png
-    hidden: false
 - select:
     name: Google
     policies:
     - Gemini
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Google.png
-    hidden: false
 - select:
     name: Microsoft
     policies:
@@ -193,14 +184,12 @@ policy_groups:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Telegram.png
-    hidden: false
 - select:
     name: Twitter
     policies:
     - Proxy
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Twitter.png
-    hidden: false
 - external:
     name: Airport-A
     type: smart
@@ -208,7 +197,6 @@ policy_groups:
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
 - external:
     name: Airport-B
     type: smart
@@ -218,37 +206,21 @@ policy_groups:
     urls_disabled:
     - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
-- external:
-    name: Airport-C
-    type: smart
-    urls:
-    - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
-- smart:
-    name: Airport-Free
-    policies: []
-    flatten: false
-    urls:
-    - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
-    icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Airport.png
-    hidden: false
+# 【routing_v2.2 删除】Airport-C 与 Airport-Free 两个订阅槽位原本在这里。
+#   Airport-C 只被 Smart / Japan 引用，Airport-Free 只被 Smart 引用；
+#   两者的上游引用已并入 Airport-A / Airport-B，删掉不损失任何选路能力。
 - select:
     name: WeChat
     policies:
     - DIRECT
     flatten: true
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/WeChat.png
-    hidden: false
 - select:
     name: AD
     policies:
     - REJECT
     - DIRECT
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/AdBlock.png
-    hidden: false
 - smart:
     name: Hong Kong
     policies:
@@ -257,7 +229,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇭🇰|香港|Hong\s*Kong|\bHKG?\b|(?:深|沪|京|广)港
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/HongKong.png
-    hidden: false
 - smart:
     name: USA
     policies:
@@ -266,17 +237,14 @@ policy_groups:
     flatten: true
     filter: (?i)🇺🇸|美国|United\s*States|America|\bUSA?\b|洛杉矶|硅谷|西雅图|芝加哥|达拉斯|凤凰城|阿什本|纽约|迈阿密|波士顿|休斯顿|亚特兰大|拉斯维加斯|圣地亚哥|盐湖城|奥斯汀|波特兰|丹佛|奥克兰|安大略|圣安娜|\b(?:LAX|SJC|SFO|SEA|ORD|JFK|DFW|IAD|PHX|ATL|BOS|MIA|EWR|LGA|IAH|HOU|DEN|OAK|ONT|SNA|LAS|PDX|DAL|SAN|SLC|MSP)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/UnitedStates.png
-    hidden: false
 - smart:
     name: Japan
     policies:
-    - Airport-C
     - Airport-A
     - Airport-B
     flatten: true
     filter: (?i)🇯🇵|日本|东京|大阪|Japan|\b(?:JPN?|NRT|HND|KIX|FUK|NGO|OSA|CTS|SDJ|OKA)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Japan.png
-    hidden: false
 - smart:
     name: Taiwan
     policies:
@@ -285,7 +253,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇹🇼|台湾|Taiwan|\b(?:TWN?|TPE|Taipei)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Taiwan.png
-    hidden: false
 - smart:
     name: Singapore
     policies:
@@ -294,7 +261,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇸🇬|新加坡|狮城|Singapore|\b(?:SGP?|SIN)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Singapore.png
-    hidden: false
 - smart:
     name: Korea
     policies:
@@ -304,7 +270,6 @@ policy_groups:
     flatten: true
     filter: (?i)🇰🇷|韩国|首尔|仁川|Korea|South\s*Korea|\b(?:KOR|KR|ICN|SEL)\b
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Korea.png
-    hidden: false
 - smart:
     name: Other Regions
     policies:
@@ -324,28 +289,23 @@ policy_groups:
         倍率|剩余|到期|流量|官网|订阅|测试|有效|禁止|邮箱|客服|地址|网站|群组
       ) ) .+ $
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/WorldMap.png
-    hidden: false
 - smart:
     name: MAX
+    # 【routing_v2.2 改】不再自带订阅 URL —— 改为「带节点筛选的 Smart」：
+    #   与 Smart 同构（smart 类型 + 上游指向 Airport-A / Airport-B），
+    #   额外的 filter 只保留低倍率节点（0.01 / 0.1），即「先筛选、再智能选优」。
+    #   原来那 2 条启用 + 2 条停用的 urls 已删除，避免出现第二个订阅入口。
     policies:
     - Airport-A
+    - Airport-B
     flatten: true
     filter: 0\.(?:01|1)
-    urls:
-    - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
-    - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
-    urls_disabled:
-    - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
-    - https://sub.example.com/api/v1/client/subscribe?token=REPLACE_WITH_YOUR_TOKEN
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Nfcloud.png
-    hidden: false
 - select:
     name: Final
     policies:
     - Proxy
-    flatten: false
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/Final.png
-    hidden: false
 rules:
 # 注：原「DNS 端点固定路由」规则（alidns / doh.pub / dns.google / cloudflare-dns 及若干 DNS 服务器 IP）
 # 已全部移除 —— 本模板 dns.upstreams / proxy_nameservers / bootstrap 均为 IP 字面量，解析器直接以 IP 访问，
@@ -354,44 +314,35 @@ rules:
 - rule_set:
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-white-guard.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/jinx-ads-rules/main/surge-ads.list
     policy: AD
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge.list
     policy: AD
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     name: ChatGPT
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/OpenAI/OpenAI.list
     policy: ChatGPT
-    disabled: false
 - rule_set:
     name: Gemini
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Gemini/Gemini.list
     policy: Gemini
-    disabled: false
 - rule_set:
     name: Anthropic
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Anthropic/Anthropic.list
     policy: Claude
-    disabled: false
 - rule_set:
     name: Claude
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Claude/Claude.list
     policy: Claude
-    disabled: false
 - rule_set:
     name: AI
     match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
     policy: AI
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Spotify/Spotify.list
     policy: Spotify
@@ -433,7 +384,6 @@ rules:
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Apple/Apple_All_No_Resolve.list
     policy: DIRECT
-    disabled: false
 - rule_set:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/WeChat/WeChat.list
     policy: WeChat

@@ -8,35 +8,55 @@
 
 [![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
-[![Profiles](https://img.shields.io/badge/Profiles-v2.5%20%7C%20lazy-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
-[![Groups](https://img.shields.io/badge/Groups-27%20%7C%204-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
+[![Profiles](https://img.shields.io/badge/Profiles-lazy%20%7C%20routing-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
+[![Groups](https://img.shields.io/badge/Groups-4%20%7C%2027-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/egern-anti-dns-leak)
 [![License](https://img.shields.io/badge/License-MIT-dfb317?style=flat-square)](docs/10-图标与许可.md)
 
 </div>
 
 ## 📥 两份配置
 
-⭐ **v2.5** · 完整分流（推荐）
-
-```
-https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/v2.5.min.yaml
-```
-
-🪶 **lazy** · 一个出口（懒人配置）
+🪶 **懒人版** · 一个出口
 
 ```
 https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/lazy.min.yaml
+```
+
+🧭 **分流版** · 按应用 + 按地区
+
+```
+https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profiles/routing_v2.5.min.yaml
 ```
 
 选中一条，点右上角复制 → Egern **配置 → 从 URL 下载** → 粘贴。
 
 ---
 
-## ⭐ v2.5
+## 🪶 懒人版
 
-`profiles/v2.5.yaml` · `profiles/v2.5.min.yaml`
+`profiles/lazy.yaml` · `profiles/lazy.min.yaml`
+
+4 组 / 9 条规则。全部流量走一个出口。**没有版本号，长期沿用。**
+
+| | |
+|:--|:--|
+| 🧭 `Proxy` | 唯一出口，空槽位需自己填 |
+| 🤖 `AI` | AI 流量独立出口 |
+| 🛑 `AD` | 只留 `REJECT`，想放行某域名加更靠前的直连规则 |
+| 🌐 `Final` | 兜底（`Proxy`，已隐藏） |
+
+没有订阅槽位，`Proxy` 必须自己填节点。
+
+---
+
+## 🧭 分流版
+
+`profiles/routing_v2.5.yaml` · `profiles/routing_v2.5.min.yaml`
 
 27 组 / 24 条规则。先按应用分，再按地区分。
+
+> 📦 **同线历代版本** —— `routing_v1` / `routing_v2` / `routing_v2.1` ~ `routing_v2.4` 保留以备对照，
+> **本版 `routing_v2.5` 为当前推荐**。逐版差异见 [`docs/07`](docs/07-文件版本沿革.md)。
 
 **✈️ 节点来源** —— 2 个订阅槽位
 
@@ -65,25 +85,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profi
 
 导入前只需填两处：订阅槽位的 `urls`（把占位 `sub.example.com` 换掉）· 可选填 `proxies` 自建节点。
 
----
-
-## 🪶 lazy
-
-`profiles/lazy.yaml` · `profiles/lazy.min.yaml`
-
-4 组 / 9 条规则。只做防泄露，不做分流。**没有版本号，长期沿用。**
-
-| | |
-|:--|:--|
-| 🧭 `Proxy` | 唯一出口，空槽位需自己填 |
-| 🤖 `AI` | AI 流量独立出口 |
-| 🛑 `AD` | 只留 `REJECT`，想放行某域名加更靠前的直连规则 |
-| 🌐 `Final` | 兜底（`Proxy`，已隐藏） |
-
-没有订阅槽位，`Proxy` 必须自己填节点。
-
 > 📄 **两份形态** —— `.yaml`（带注释）与 `.min.yaml`（纯配置）内容一致，只差注释，取用其一即可。
-> 📦 其余 `profiles/*.yaml` 都是 `v2.5` 的历代旧版，保留以备对照 —— 逐版差异见 [`docs/07`](docs/07-文件版本沿革.md)。
 
 ---
 
@@ -91,7 +93,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profi
 
 自上而下匹配，第一条命中即决定去向。
 
-| # | 规则 | ⭐ v2.5 | 🪶 lazy |
+| # | 规则 | 🧭 分流版 | 🪶 懒人版 |
 |:-:|:-----|:--------|:------|
 | 🛡️ | 白名单守卫 | `jinx white-guard` → `DIRECT` | 同左 |
 | 🚫 | 广告拦截 | `jinx ads-delta` · `AWAvenue` → `AD` | `jinx ads` · `AWAvenue` → `AD` |
@@ -103,9 +105,9 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/profi
 | 🌏 | 国内 IP | `geoip: CN`（`no_resolve`）→ `DIRECT` | 同左 |
 | 🌐 | 兜底 | `Final` | `Final` |
 
-> 📌 上面是**分类**顺序。`v2.5` 里真正的匹配顺序在「按应用」之后还有一条 `Proxy.list`（`disabled: true`，不生效），随后才是 Apple → 微信。
+> 📌 上面是**分类**顺序。`routing_v2.5` 里真正的匹配顺序在「按应用」之后还有一条 `Proxy.list`（`disabled: true`，不生效），随后才是 Apple → 微信。
 
-**v2.5 的应用规则**
+**分流版的应用规则**
 
 | 规则集 | 去向 |
 |:-------|:-----|
@@ -169,7 +171,7 @@ Egern 有两套 DNS。
 
 ```
 egern-anti-dns-leak/
-├── 📁 profiles/        # 16 份配置：v2.5 / lazy × 带注释 / 纯配置，另 6 份旧版
+├── 📁 profiles/        # 16 份配置：lazy + routing_v1~v2.5，各含带注释 / 纯配置两份
 ├── 🖼️ icons/           # 策略组图标
 ├── 📚 docs/            # 10 篇专题
 ├── 📘 DetailsReadme/   # 完整技术文档
@@ -192,7 +194,7 @@ egern-anti-dns-leak/
 
 ## 📖 更多文档
 
-- 📘 [`DetailsReadme/`](DetailsReadme/) —— 逐段详解 · 原理推导 · v1–v10 谱系 · 18 项审计清单 · 已知取舍 · FAQ
+- 📘 [`DetailsReadme/`](DetailsReadme/) —— 逐段详解 · 原理推导 · 配置迭代谱系 v1–v10 · 18 项审计清单 · 已知取舍 · FAQ
 - 📂 [`docs/`](docs/) —— 全部 10 篇：DNS 怎么工作 / 为什么泄露 / 加固清单 / 逐段讲解 / `no_resolve` 成对交付 / 实测谱系 / 文件版本沿革 / 审计读数 / 注意事项 / 图标与许可
 - ⚠️ [`docs/09`](docs/09-注意事项.md) —— 使用前必看
 - 🎨 [`docs/10`](docs/10-图标与许可.md) —— 图标与许可

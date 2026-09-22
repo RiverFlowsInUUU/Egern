@@ -65,15 +65,15 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 
 要点：
 - **组与组之间可以互相引用**（例如 `Final` 的成员是 `Proxy`，App 组的成员里混入地区组）。这种引用关系保留，是模板的正常结构。
-- **`v2.3` 起已无空组**：`ChatGPT` / `Gemini` 曾是 `policies: []` 的空组，而规则直接指向它们
+- **`routing_v2.3` 起已无空组**：`ChatGPT` / `Gemini` 曾是 `policies: []` 的空组，而规则直接指向它们
   ⇒ **导入即静默断流**；现已填成 `[Proxy]` + `flatten: true`（`flatten` 在这里起什么作用，
   见下方「组清单与要点」；逐段讲解见 `docs/04-模板逐段讲解.md` §4）。
 - **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/egern-anti-dns-leak/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
 
-#### 组清单与要点（`v2.5`）
+#### 组清单与要点（`routing_v2.5`）
 
 **节点来源**（2 个订阅槽位）：`Airport-A` / `Airport-B`（后者另带一条 `urls_disabled` 示例）。
-`v2.1` 及更早为 4 个槽位（多出 `Airport-C` / `Airport-Free`）—— `v2.2` 精简掉，选路能力不变。
+`routing_v2.1` 及更早为 4 个槽位（多出 `Airport-C` / `Airport-Free`）—— `routing_v2.2` 精简掉，选路能力不变。
 
 **`flatten: true`** —— 把子策略组**展开成全部具体节点**，而不是当成一个「组」单位。
 以 `Smart` 为例：不加时候选是「`Airport-A` 组」「`Airport-B` 组」两个单位（两级选优），
@@ -94,7 +94,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 关键词**逐字抄了一遍** —— 改任何一组的关键词都要同步改它，
 用 [`skill/scripts/audit_region_filters.py`](../skill/scripts/audit_region_filters.py) 校验（漏改会被它拦下）。
 
-**服务组**（默认策略与承接的规则集）见 [`README.md`「🎯 分流组结构」](../README.md#-分流组结构)。
+**服务组**（默认策略与承接的规则集）见 [`README.md`「🧭 分流版」](../README.md#-分流版)。
 
 **`lazy` 的两处专属调整**（只属于它，不同步其他版本）：`AD` 组**只有 `REJECT`**（没有 `DIRECT` 兜底）、
 `Final` 组**被隐藏**（只有一个子策略，没有手动切换的意义）。
@@ -133,7 +133,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 
 另有 `hijack_dns`（接管 `:53` 返回 Fake IP）。
 
-> 关于 `Foreign-DNS` 组：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`v1` 里它被**整组注释**保留作 A/B 备用，**`v2` 起整段删除**。想恢复境外解析答案，需自行在 `upstreams` 里加回该组、并把 `forward` 兜底的 `value` 改过去 —— 但要注意「先有代理才敢解析」的启动期明文风险。详见第 6 节。
+> 关于 `Foreign-DNS` 组：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`routing_v1` 里它被**整组注释**保留作 A/B 备用，**`routing_v2` 起整段删除**。想恢复境外解析答案，需自行在 `upstreams` 里加回该组、并把 `forward` 兜底的 `value` 改过去 —— 但要注意「先有代理才敢解析」的启动期明文风险。详见第 6 节。
 
 ### 1.6 `rule_sets` 与 `no_resolve` 要求
 
@@ -182,7 +182,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 forward:
   - domain_wildcard: '*'     value: Domestic-DNS
 ```
-> `v1` 里是两条（`domain_regex: '.'` + `domain_wildcard: '*'`）；`v2.1` 删掉了 `domain_regex` ——
+> `routing_v1` 里是两条（`domain_regex: '.'` + `domain_wildcard: '*'`）；`routing_v2.1` 删掉了 `domain_regex` ——
 > 它与 `domain_wildcard` 语义完全重叠（任何域名两条都命中、`value` 又相同），
 > 按官方「第一条命中即决定上游」，第二条永远不会被求值。详见 2.4。
 
@@ -240,7 +240,7 @@ forward:
 
 | 脚本 | 发布模板读数 | 说明 |
 |---|---|---|
-| `check_egern_dns.py` | ✅ **0 high / 2 low / 24 ok（退出码 0）** | 见下方「v3.1 判据修正」；24 这个数对应 `v2` 起的全部版本（`v1` 是 30 ok，多出的 6 项来自它比 `v2` 多的一批 DNS 端点路由规则） |
+| `check_egern_dns.py` | ✅ **0 high / 2 low / 24 ok（退出码 0）** | 见下方「v3.1 判据修正」；24 这个数对应 `routing_v2` 起的全部版本（`routing_v1` 是 30 ok，多出的 6 项来自它比 `routing_v2` 多的一批 DNS 端点路由规则） |
 | `audit_routing_coverage.py` | ✅ 15/15 国内探针 `DIRECT` | 分流正确性不受脱敏影响 |
 | `audit_dns_forward.py --drill` | ✅ 通过（退出码 0） | `forward` value 单值、订阅耦合 0 |
 | `audit_region_filters.py` | ✅ 6 个地区组关键词全部同步（退出码 0） | 负向断言与地区组 filter 逐字一致 |
@@ -368,10 +368,10 @@ forward:
 
 ## 6. 已知代价与取舍
 
-- **`Foreign-DNS` 已删除**：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`v1` 曾**整组注释**保留为 A/B 备用，**`v2` 起整段删除**。要恢复境外解析答案，需自行在 `upstreams` 里加回该组。风险提醒：若用它作兜底且代理未就绪，会掉进明文 `:53`。
-- **两个版本 + 6 份旧版 × 双形态**：可选只有 `profiles/v2.5.yaml`（**推荐**，完整分流）与 `profiles/lazy.yaml`（**懒人配置**，4 组 / 9 条规则）；其余 `v2.4` / `v2.3` / `v2.2` / `v2.1` / `v2` / `v1` 都是 `v2.5` 的历代旧版、保留以备对照（`v1`~`v2.1` 为 29 组 / 24 条，`v2.2`~`v2.5` 为 27 组 / 24 条）。**各版本逐项差异见 [`docs/07-文件版本沿革.md`](../docs/07-文件版本沿革.md)（权威版本）**。⚠️ 文件名 `v1`…`v2.5` 是**文件版本**（`lazy` 已退出版本体系），与 `docs/06` 的「配置迭代谱系 v1~v10」是两个维度。
+- **`Foreign-DNS` 已删除**：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`routing_v1` 曾**整组注释**保留为 A/B 备用，**`routing_v2` 起整段删除**。要恢复境外解析答案，需自行在 `upstreams` 里加回该组。风险提醒：若用它作兜底且代理未就绪，会掉进明文 `:53`。
+- **两条线 × 双形态**：可选只有 `profiles/lazy.yaml`（**懒人版**，4 组 / 9 条规则）与 `profiles/routing_v2.5.yaml`（**分流版 · 推荐**，完整分流）；其余 `routing_v2.4` / `routing_v2.3` / `routing_v2.2` / `routing_v2.1` / `routing_v2` / `routing_v1` 都是分流线的历代旧版、保留以备对照（`routing_v1`~`routing_v2.1` 为 29 组 / 24 条，`routing_v2.2`~`routing_v2.5` 为 27 组 / 24 条）。**各版本逐项差异见 [`docs/07-文件版本沿革.md`](../docs/07-文件版本沿革.md)（权威版本）**。⚠️ 文件名 `routing_v1`…`routing_v2.5` 是**文件版本**，与 `docs/06` 的「配置迭代谱系 v1~v10」是两个维度。
 - **图标整合进本仓库**：26 个图标源自已整合进 `icons/`，模板不再跨项目引用图标地址。来源归属与许可见 [`docs/10-图标与许可.md`](../docs/10-图标与许可.md)（公开仓库署名）。
-- **删除虚拟节点（不保留引用）**：模板 `proxies` 为空，占位节点名引用已从 `policy_groups` 剥除（组间引用保留；`v2.3` 起**已无空组**）。不保留虚假结构，由你自行填写。
+- **删除虚拟节点（不保留引用）**：模板 `proxies` 为空，占位节点名引用已从 `policy_groups` 剥除（组间引用保留；`routing_v2.3` 起**已无空组**）。不保留虚假结构，由你自行填写。
 - **与订阅解耦**：forward 不写任何节点 / 订阅域名，换订阅无需改动 DNS 段（清单 18 验证订阅耦合 4 → 0）。
 - **审计脚本报的 2 条 `LOW`（刻意为之，不是缺陷）**：`check_egern_dns.py` 对本模板的读数是 `0 high, 2 low`。两条都属「安全性 vs 可用性」的自觉取舍，不是配置错误：
   - **① 设置了 `proxy_nameservers`** —— 它成为代理侧解析的唯一出口（绕过 `forward`、强制直连）。这是必须的：节点域名要在代理起来之前解析，只能走直连侧。
@@ -437,7 +437,7 @@ forward:
 - `_publish_to_github.py` —— 递归遍历 `public/` 走 Git Data API 增量提交。
 
 > ⚠️ **这组脚本当前已不在维护者本机**（2026-09-21 核查确认，全盘搜索无结果）。
-> 它们描述的"从自用配置生成模板"流程**已停用** —— `v2.1` / `v2.2` / `v2.3` / `v2.4` / `v2.5`
+> 它们描述的"从自用配置生成模板"流程**已停用** —— `routing_v2.1` / `routing_v2.2` / `routing_v2.3` / `routing_v2.4` / `routing_v2.5`
 > 都是在仓库里**直接改 `profiles/*.yaml`** 产出的（模板早已脱敏完毕，无需重新生成）。
 > 此处保留是为了记录方法论；若要恢复该流程，见 §8.2 的 Git Data API 流程重建。
 
@@ -494,7 +494,7 @@ S="skill/scripts"
 > **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **21 个**远程规则集中，**11 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads / **jinx white-guard** / **jinx ads**，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
 
 **Q5：`Foreign-DNS` 组去哪了？我还能用吗？**
-`v2` 起已整段删除（迭代 v10 起它就无引用，`v1` 曾注释保留为 A/B 备用）。想用境外解析答案，需自行在 `upstreams` 里加回该组（6 个境外 DoH/DoT 端点），并把 forward 兜底 `value` 改过去。但注意：若它作兜底且代理未就绪，会掉进明文 `:53` —— 迭代 v10 默认用国内组兜底正是为了避免这条路径。
+`routing_v2` 起已整段删除（迭代 v10 起它就无引用，`routing_v1` 曾注释保留为 A/B 备用）。想用境外解析答案，需自行在 `upstreams` 里加回该组（6 个境外 DoH/DoT 端点），并把 forward 兜底 `value` 改过去。但注意：若它作兜底且代理未就绪，会掉进明文 `:53` —— 迭代 v10 默认用国内组兜底正是为了避免这条路径。
 
 **Q6：模板为什么没有示例节点？**
 避免占位节点在分流组里留下悬空引用（过度设计）。你填真实节点后，再把对应组的 `policies` 填上节点名 / 订阅组名。
@@ -503,7 +503,7 @@ S="skill/scripts"
 为了避免模板跨项目引用图标地址（你的项目或别人的项目）。26 个图标已整合进 `icons/`，模板全部以本仓库原始地址引用，并保留来源署名。
 
 **Q8：两个模板文件有什么区别？**
-内容完全一致，仅注释差异。`profiles/v2.5.yaml` 带注释（每段附原理），`profiles/v2.5.min.yaml` 纯配置。按习惯取用其一（其余版本同理：`lazy` / `v1` / `v2` / `v2.1` / `v2.2` / `v2.3` / `v2.4` 各有这两份）。
+内容完全一致，仅注释差异。`profiles/routing_v2.5.yaml` 带注释（每段附原理），`profiles/routing_v2.5.min.yaml` 纯配置。按习惯取用其一（其余版本同理：`lazy` / `routing_v1` / `routing_v2` / `routing_v2.1` / `routing_v2.2` / `routing_v2.3` / `routing_v2.4` 各有这两份）。
 
 **Q9：审计全绿就安全了吗？**
 不。本项目连续 5 次「脚本 0 high、实测仍有问题」，根因是审计维度缺失（没看规则集文件、没看分流覆盖）。必须把每个新维度补成可复跑脚本，而不是重跑同一脚本。详见第 3 节 / 清单 16、17。
