@@ -73,7 +73,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 
 **🤖 AI 组**
 
-- 🧩 `AI` · `smart` —— 总入口，承接 `AI.list`
+- 🧩 `AI` · `smart` —— 总入口
 - 💬 `ChatGPT` · `fallback` —— `Proxy` + `flatten`，节点级故障转移
 - ✨ `Gemini` · `fallback` —— 同上（`Google` 组首项，默认选中）
 - 🧠 `Claude` · `smart` —— 默认指向 `Taiwan`
@@ -89,39 +89,23 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 
 ---
 
-## 📋 规则顺序
+## 📋 分流顺序
 
 自上而下匹配，第一条命中即决定去向。
 
-| # | 规则 | 🧭 分流版 | 🪶 懒人版 |
+| # | 匹配什么 | 🧭 分流版 | 🪶 懒人版 |
 |:-:|:-----|:--------|:------|
-| 🛡️ | 白名单 | `Jinx white-guard` → `DIRECT` | 同左 |
-| 🚫 | 广告拦截 | `Jinx ads` · `AWAvenue` → `AD` | 同左 |
-| 🏠 | 内网 | `Lan` → `DIRECT` | 同左 |
-| 🤖 | 按应用 | 13 条，见下 | 1 条（`AI.list` → `AI`） |
-| 🍎 | Apple 服务 | `Apple_All_No_Resolve` → `DIRECT` | ✂️ 无 |
-| 💚 | 微信 | `WeChat` → `DIRECT` | ✂️ 无 |
-| 🇨🇳 | 国内域名 | `direct.txt` + `.cn` 后缀 → `DIRECT` | 同左 |
-| 🌏 | 国内 IP | `geoip: CN`（`no_resolve`）→ `DIRECT` | 同左 |
-| 🌐 | 兜底 | `Final` | `Final` |
+| 🛡️ | 白名单域名 | 直连 | 同左 |
+| 🚫 | 广告域名 | `AD` | 同左 |
+| 🏠 | 内网 | 直连 | 同左 |
+| 🤖 | 按应用 | 13 类应用各自成组 | AI 服务 → `AI` |
+| 🍎 | Apple 服务 | 直连 | ✂️ 无 |
+| 💚 | 微信 | 直连 | ✂️ 无 |
+| 🇨🇳 | 国内域名 | 直连 | 同左 |
+| 🌏 | 国内 IP | 直连 | 同左 |
+| 🌐 | 其余全部 | `Final` | `Final` |
 
-**分流版的应用规则**
-
-| 规则集 | 去向 |
-|:-------|:-----|
-| `OpenAI.list` | `ChatGPT` |
-| `Gemini.list` | `Gemini` |
-| `Anthropic.list` · `Claude.list` | `Claude` |
-| `AI.list` | `AI` |
-| `Spotify.list` | `Spotify` |
-| `YouTubeMusic.list` | `YouTubeMusic` |
-| `YouTube.list` | `YouTube` |
-| `GitHub.list` | `GitHub` |
-| `Google.list` | `Google` |
-| `Microsoft.list` | `Microsoft` |
-| `Telegram.list` | `Telegram` |
-| `Twitter.list` | `Twitter` |
-| `WeChat.list` | `WeChat` |
+**应用组的默认出口**
 
 | 应用组默认出口 | 备注 |
 |:---------------|:-----|
@@ -134,11 +118,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 | 🪟 `Microsoft` | 直连，首项 `DIRECT` |
 | 💚 `WeChat` | 直连，把微信从兜底里摘出来 |
 
-**三条排序约束**
-
-1. 厂商专属规则（`OpenAI` / `Gemini` / `Anthropic` / `Claude`）排在 `AI.list` 之前，否则 AI 域名先被 `AI.list` 接走。
-2. Apple / 微信排在 `direct.txt` 之前 —— 它们要抢在国内域名规则之前定去向。
-3. `geoip: CN` 排最后，必须带 `no_resolve`，否则每个走到它的域名都会被强制本地解析一次。
+> ⚠️ 白名单必须排在最前，顺序不可调整。
 
 ---
 
@@ -150,7 +130,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 | 🔐 解析上游 | 4 个加密端点（DoH + DoT × 2 机构），全部 IP 字面量 |
 | 🛡️ 明文回退 | catch-all 兜住全部域名，永不落到 `bootstrap` |
 | 🧭 节点域名 | `proxy_nameservers` 专用通道、强制直连，与业务解析分离 |
-| 🧩 规则匹配 | IP 类规则带 `no_resolve`；国内域名由 `direct.txt` 域名规则接住，两者成对交付 |
+| 🧩 规则匹配 | IP 类规则带 `no_resolve`；域名直连规则与之成对交付 |
 | 📋 审计读数 | 自带审计脚本 **0 high** · 路由覆盖 **15/15** |
 
 > 🔍 完整推导见 [`DetailsReadme` §2](DetailsReadme/DetailsReadme.md#2-防泄露原理从机制到推导) 与 [`docs/02`](docs/02-DNS为什么会泄露.md)。
@@ -163,28 +143,18 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 |:--:|:-----|:-----|
 | 📁 | [`profiles/`](profiles/) | 14 份配置：lazy + routing_v1~v2.4，各含带注释 / 纯配置 |
 | 🖼️ | [`icons/`](icons/) | 策略组图标 |
-| 📚 | [`docs/`](docs/) | 10 篇专题 |
+| 📚 | [`docs/`](docs/) | 11 篇专题 |
 | 📘 | [`DetailsReadme/`](DetailsReadme/DetailsReadme.md) | 完整技术文档 |
 | 🗓️ | [`CHANGELOG.md`](CHANGELOG.md) | 版本记录 |
 | 🧪 | [`skill/`](skill/) | 审计脚本 + 回归测试 |
 
 ---
 
-## 📚 规则来源
-
-- 🛑 [Jinx](https://github.com/RiverFlowsInUUU/Jinx) —— 广告拦截 · 白名单
-- 🧩 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) —— 应用规则集
-- 🤖 [ACL4SSR/ACL4SSR](https://github.com/ACL4SSR/ACL4SSR) —— `AI.list`
-- 🇨🇳 [Loyalsoldier/surge-rules](https://github.com/Loyalsoldier/surge-rules) —— `direct.txt` · `Lan.list`
-- 🗺️ [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip) —— `Country.mmdb` · `GeoLite2-ASN.mmdb`
-- 🛡️ [TG-Twilight/AWAvenue-Ads-Rule](https://github.com/TG-Twilight/AWAvenue-Ads-Rule) —— 广告拦截
-
----
-
 ## 📖 更多文档
 
 - 📘 [`DetailsReadme/`](DetailsReadme/) —— 逐段详解 · 原理推导 · 配置迭代谱系 f1–f10 · 18 项审计清单 · 已知取舍 · FAQ
-- 📂 [`docs/`](docs/) —— 全部 10 篇：DNS 怎么工作 / 为什么泄露 / 加固清单 / 逐段讲解 / `no_resolve` 成对交付 / 实测谱系 / 文件版本沿革 / 审计读数 / 注意事项 / 图标与许可
+- 📂 [`docs/`](docs/) —— 全部 11 篇：DNS 怎么工作 / 为什么泄露 / 加固清单 / 逐段讲解 / `no_resolve` 成对交付 / 实测谱系 / 文件版本沿革 / 审计读数 / 注意事项 / 图标与许可 / 规则集与来源
+- 📚 [`docs/11`](docs/11-规则集与来源.md) —— 规则集与来源
 - ⚠️ [`docs/09`](docs/09-注意事项.md) —— 使用前必看
 - 🎨 [`docs/10`](docs/10-图标与许可.md) —— 图标与许可
 - 🧪 [`skill/`](skill/) —— 审计脚本 · 回归测试 · 方法论
