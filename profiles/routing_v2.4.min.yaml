@@ -234,18 +234,22 @@ policy_groups:
     icon: https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/Final.png
 rules:
 - rule_set:
+    name: Jinx-CN
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-white-guard.list
     policy: DIRECT
     update_interval: 86400
 - rule_set:
+    name: Jinx-Ads
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-ads.list
     policy: AD
     update_interval: 86400
 - rule_set:
+    name: AWAvenue-Ads
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge-RULE-SET.list
     policy: AD
     update_interval: 86400
 - rule_set:
+    name: Lan
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
     update_interval: 86400
@@ -275,51 +279,63 @@ rules:
     policy: AI
     update_interval: 86400
 - rule_set:
+    name: Spotify
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Spotify/Spotify.list
     policy: Spotify
     update_interval: 86400
 - rule_set:
+    name: YTM
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/YouTubeMusic/YouTubeMusic.list
     policy: YouTubeMusic
     update_interval: 86400
 - rule_set:
+    name: YouTube
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/YouTube/YouTube.list
     policy: YouTube
     update_interval: 86400
 - rule_set:
+    name: Github
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/GitHub/GitHub.list
     policy: GitHub
     update_interval: 86400
 - rule_set:
+    name: Google
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Google/Google.list
     policy: Google
     update_interval: 86400
 - rule_set:
+    name: Microsoft
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Microsoft/Microsoft.list
     policy: Microsoft
     update_interval: 86400
 - rule_set:
+    name: Telegram
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Telegram/Telegram.list
     policy: Telegram
     update_interval: 86400
 - rule_set:
+    name: Twitter
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Twitter/Twitter.list
     policy: Twitter
     update_interval: 86400
 - rule_set:
+    name: Proxy
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Proxy/Proxy.list
     policy: Proxy
     update_interval: 86400
     disabled: true
 - rule_set:
+    name: Apple
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Apple/Apple_All_No_Resolve.list
     policy: DIRECT
     update_interval: 86400
 - rule_set:
+    name: WeChat
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/WeChat/WeChat.list
     policy: WeChat
     update_interval: 86400
 - rule_set:
+    name: CN
     match: https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/direct.txt
     policy: DIRECT
     update_interval: 86400

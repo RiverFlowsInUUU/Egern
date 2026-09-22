@@ -387,15 +387,19 @@ rules:
 # 无需在 rules 中钉域名/IP；移除不影响防 DNS 泄露（详见 DetailsReadme 的「配置框架逐段详解」）。
 # ---- 原有规则（2026-09-21 在其之前新增了 white-guard / ads 两条；原有规则之间顺序不变）----
 - rule_set:
+    name: Jinx-CN
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-white-guard.list
     policy: DIRECT
 - rule_set:
+    name: Jinx-Ads
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-ads.list
     policy: AD
 - rule_set:
+    name: AWAvenue-Ads
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge-RULE-SET.list
     policy: AD
 - rule_set:
+    name: Lan
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
 - rule_set:
@@ -419,30 +423,39 @@ rules:
     match: https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/75f0101039d71724b6e998b34604c2e053580e0c/Clash/Ruleset/AI.list
     policy: AI
 - rule_set:
+    name: Spotify
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Spotify/Spotify.list
     policy: Spotify
 - rule_set:
+    name: YTM
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/YouTubeMusic/YouTubeMusic.list
     policy: YouTubeMusic
 - rule_set:
+    name: YouTube
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/YouTube/YouTube.list
     policy: YouTube
 - rule_set:
+    name: Github
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/GitHub/GitHub.list
     policy: GitHub
 - rule_set:
+    name: Google
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Google/Google.list
     policy: Google
 - rule_set:
+    name: Microsoft
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Microsoft/Microsoft.list
     policy: Microsoft
 - rule_set:
+    name: Telegram
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Telegram/Telegram.list
     policy: Telegram
 - rule_set:
+    name: Twitter
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Twitter/Twitter.list
     policy: Twitter
 - rule_set:
+    name: Proxy
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Proxy/Proxy.list
     policy: Proxy
     disabled: true
@@ -457,9 +470,11 @@ rules:
 #   对 IP 形式的连接判定也完全不受影响（IP 本就无需解析）。
 #   全部 20 个远程规则集已逐个下载核对：**只有 Apple_All.list 存在这个缺陷**。
 - rule_set:
+    name: Apple
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Apple/Apple_All_No_Resolve.list
     policy: DIRECT
 - rule_set:
+    name: WeChat
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/WeChat/WeChat.list
     policy: WeChat
 # ★ 国内域名直连的**主力**规则集。
@@ -473,6 +488,7 @@ rules:
 #   —— 纯域名规则集只做域名串匹配、**不触发任何解析**，因此与 no_resolve 无关；
 #      原先由 ChinaMax 的 IP 条目承担的「已是 IP 的连接」由下方 geoip:CN 兜住。
 - rule_set:
+    name: CN
     match: https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/direct.txt
     policy: DIRECT
 # .cn 直连兜底：geoip 加了 no_resolve 后无法匹配域名。上面的国内域名规则集

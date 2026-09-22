@@ -117,17 +117,21 @@ rules:
 # ① 白名单 —— **必须放最前面**：这些域名要抢在广告规则之前放行，
 #    否则会被下面的广告规则误杀。（42 条 DOMAIN 精确匹配）
 - rule_set:
+    name: Jinx-CN
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-white-guard.list
     policy: DIRECT
 # ② 广告拦截 —— 两条并列（先 Jinx，后 AWAvenue），都指向 AD。
 - rule_set:
+    name: Jinx-Ads
     match: https://raw.githubusercontent.com/RiverFlowsInUUU/Jinx/main/surge-ads.list
     policy: AD
 - rule_set:
+    name: AWAvenue-Ads
     match: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Surge-RULE-SET.list
     policy: AD
 # ③ 内网 / 局域网 —— 必须直连。
 - rule_set:
+    name: Lan
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Lan/Lan.list
     policy: DIRECT
 # ④ AI 分流 —— 命中即走 AI 组（→ Proxy）。
@@ -140,6 +144,7 @@ rules:
 #    本配置已移除 —— Apple 流量变成「部分直连、部分走代理」，详见文件末尾第 3 条。
 #    Loyalsoldier direct.txt：11 万条纯域名，是国内直连的主承重墙。
 - rule_set:
+    name: CN
     match: https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/direct.txt
     policy: DIRECT
 - domain_suffix:

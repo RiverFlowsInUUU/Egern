@@ -68,6 +68,17 @@
     `egern-profile-dns-hardening` 等一律未动，只改文本里的裸称呼。
 - 📝 **GitHub 仓库描述同步修正** —— 改为「两个模板 + DNS 特色」的说法，
   并修掉两处过期数字（加固清单 17 → **18** 项、审计脚本 6 → **5** 个）。
+- 🏷️ **16 条 `rule_set` 补上 `name`** —— 14 份 profile 共 **202 处**（14 文件 ×5 条 + 12 文件 ×11 条）。
+  在此之前只有 5 条 AI 相关规则集带 `name`（`ChatGPT` / `Gemini` / `Anthropic` / `Claude` / `AI`），
+  其余全是匿名。本次补全为：
+  `Jinx-Ads` / `AWAvenue-Ads` / `Jinx-CN` / `Lan` / `Apple` / `CN` /
+  `Github` / `Google` / `Microsoft` / `Proxy` / `Spotify` / `Telegram` / `Twitter` / `WeChat` /
+  `YouTube` / `YTM`。
+  官方字段说明：`name` 为**可选**（"The rule name, used for logging and debugging"），
+  必填的是 `match` / `policy` ⇒ **本次改动不改变任何路由行为**。
+  ⚠️ 已命名的 5 条与四处 `name` 值**一字未动**；`disabled` / `update_interval` / 规则顺序全部保持原样。
+  实测依据：**202 处纯新增、0 删除**；`yaml.safe_load` 解析后「剥掉 `name`」与改动前**逐字段等价**；
+  仓内回归 **19 passed / 0 failed**（阶段 1·5 + 阶段 2·14，与改动前一致）。
 
 **修复**
 
