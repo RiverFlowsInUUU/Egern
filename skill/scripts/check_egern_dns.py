@@ -1,18 +1,18 @@
-"""DNS-leak audit for an Egern profile (v3).
+"""DNS-leak audit for an Egern profile (f3).
 
-v3 相对 v2 新增/修正的检查项，来自一次"审计通过但用户实测泄露"的复盘：
+f3 相对 f2 新增/修正的检查项，来自一次"审计通过但用户实测泄露"的复盘：
   * ⭐ 兜底组可达性：判据从「端点写 IP + 有显式路由」收紧为「端点写 IP + 至少一个判给
     DIRECT」。理由：官方只写了「未命中 Forward -> 回退 Bootstrap」，「命中组的端点全失败」
     是未定义行为；且兜底组经代理会引入「先有代理才能解析」的隐式依赖，启动阶段（规则集 /
     geoip·asn DB 下载、策略组首轮测速）代理未就绪时，解析会掉进 bootstrap 明文。
   * ⭐ 兜底指向**国内**组不再是 HIGH，而是 OK + 一条 LOW 说明。前提是它直连可达；按官方
     语义走代理的域名由节点远程解析、不经过 dns 段，所以"本地解析用国内解析器"影响面仅限
-    DIRECT 域名。v2 那条"兜底指国内 = 既泄露又与 CDN 冲突"的判断是错的（它把"泄露"和
+    DIRECT 域名。f2 那条"兜底指国内 = 既泄露又与 CDN 冲突"的判断是错的（它把"泄露"和
     "答案可能被污染"混为一谈，而真正致命的是**明文**）。
 
-v2 相对 v1 的检查项（保留）：
+f2 相对 f1 的检查项（保留）：
   * proxy 的读取修对了 —— rule 的 policy 是嵌在类型字典里的（{domain: {match, policy}}），
-    v1 里用 r.get("policy") 读会永远拿到 None，等于没查。
+    f1 里用 r.get("policy") 读会永远拿到 None，等于没查。
   * DNS 端点路由覆盖：no_resolve 之后 geoip 不再匹配域名，域名形式的加密 DNS 端点会
     一路落到 default 策略上。必须存在显式规则把国内端点钉到 DIRECT、境外端点钉到 Proxy。
   * 规则引用的策略必须能解析到已定义的策略组/代理/内建策略（抓出 `负载均衡` 这类笔误）。
@@ -234,7 +234,7 @@ def audit(path):
         )
 
     # ---- 兜底组可达性：一个 upstreams 组是不是「不依赖代理也活得下来」--------
-    # v3 新增。起因：v5 把 backstop 挂在「端点全为 IP、且都在 rules 里判给 Proxy」的境外组上，
+    # f3 新增。起因：f5 把 backstop 挂在「端点全为 IP、且都在 rules 里判给 Proxy」的境外组上，
     # 审计判了 OK，用户实测却看到 `upstream: bootstrap`。复盘发现两个漏洞：
     #   ① 官方只写了「未命中 Forward -> 回退 Bootstrap」，「命中组的端点全失败」是未定义行为，
     #      一旦它同样回退 bootstrap，兜底挂在必须经代理的组上就是一条明文通道；
@@ -260,11 +260,11 @@ def audit(path):
         False = 需要 bootstrap 明文（'hostname'）或必须经代理才可达（'proxy_only'）
         None  = 组不存在或为空（'missing'）
 
-        ⭐ 判据 B 是 v3.1 新增。起因：v10 把 DNS 端点路由规则整段删掉后（依据是
+        ⭐ 判据 B 是 f3.1 新增。起因：f10 把 DNS 端点路由规则整段删掉后（依据是
         「端点全是 IP 字面量 ⇒ 不需要在 rules 里钉路由」，见 docs/04 §5 段 A），
         只有判据 A 会让这类配置**永远**判负 —— 判据与设计意图互相排斥。
         但也不能退回「端点全为 IP 即判可达」：那会放行一个**全由境外 IP 组成**的组
-        （v5 的真实踩坑：兜底挂在必须经代理的境外组上，审计 OK、实测泄露）。
+        （f5 的真实踩坑：兜底挂在必须经代理的境外组上，审计 OK、实测泄露）。
         所以用「国内知名解析器 IP」这个在 profile 文本内可验证、且语义等价于
         「直连可达」的证据，替代 ip_cidr 装饰性规则。
         """
@@ -411,7 +411,7 @@ def audit(path):
             if hits:
                 ok.append(f"端点 {h} 有显式路由 {hits[0]}（期望 {want}）")
             elif not foreign and is_ip(h) and h in DOMESTIC_RESOLVER_IPS:
-                # ⭐ v3.1：端点本身是国内知名解析器 IP —— 它不经代理即可直达，
+                # ⭐ f3.1：端点本身是国内知名解析器 IP —— 它不经代理即可直达，
                 # 不需要在 rules 里再钉一条装饰性 DIRECT 规则（与 group_reach 判据 B 一致）。
                 ok.append(
                     f"端点 {h} 是国内知名解析器 IP，国内链路直连可达，无需显式 DIRECT 路由"

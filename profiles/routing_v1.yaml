@@ -56,11 +56,11 @@ dns:
     - https://120.53.53.53/dns-query
     - tls://223.5.5.5
     - tls://1.12.12.12
-    # ---- 境外加密 DNS（v10 起无任何引用，保留为 A/B 备用，不影响泄露面）-------------
-    # ⚠️ 本组从 v6 起从 forward 兜底上摘了下来：它的端点必须经代理才可达，把兜底
+    # ---- 境外加密 DNS（f10 起无任何引用，保留为 A/B 备用，不影响泄露面）-------------
+    # ⚠️ 本组从 f6 起从 forward 兜底上摘了下来：它的端点必须经代理才可达，把兜底
     #    挂在它身上等于「先有代理，才敢解析」—— 代理未就绪时那次解析会掉进 bootstrap
     #    明文，在电信蜂窝上就是泄露给电信。改用 Domestic-DNS 兜底（见 forward 的两条兜底）。
-    #    要切回 v5 的行为：先取消下方 Foreign-DNS 组的注释，再把 forward 最后两条的 value 改回 Foreign-DNS 即可。
+    #    要切回 f5 的行为：先取消下方 Foreign-DNS 组的注释，再把 forward 最后两条的 value 改回 Foreign-DNS 即可。
     # 6 个端点、三家机构。关键点有两个：
     #   ① IP 字面量 ⇒ 不需要 bootstrap（否则 dns.google 这个名字本身在国内就拿不到真 IP，
     #      这一步一失败，整组就废，随后就是回退明文 —— 这正是原配置的写法带来的后果）；
@@ -74,8 +74,8 @@ dns:
     #   tls://9.9.9.9 -> 证书 CN=dns.quad9.net，正常应答 ⇒ Quad9 只能走 DoT
     # 为什么多列几个：官方「同一组内的多个服务器并发竞速，由响应最快者胜出」。
     # 触发回退的唯一条件是「这一组全部失败」，端点越多越不可能。
-    # ---- Foreign-DNS 组（v10 起：注释掉，未引用，保留为 A/B 备用）---------------
-    # ⚠️ 本组自 v6 起从 forward 兜底摘下、v10 起除上方说明外再无引用，目前是
+    # ---- Foreign-DNS 组（f10 起：注释掉，未引用，保留为 A/B 备用）---------------
+    # ⚠️ 本组自 f6 起从 forward 兜底摘下、f10 起除上方说明外再无引用，目前是
     #    「定义了但没人用」的状态。按你的要求保留（不删除），仅注释掉以免被误引用。
     #    若要恢复：取消下面 7 行的注释，并把 forward 两条兜底的 value 改回 Foreign-DNS
     #    （或删掉 proxy_nameservers 改回用本组）。注意：用本组兜底会引入「先有代理才敢
@@ -88,8 +88,8 @@ dns:
 #     - tls://8.8.8.8
 #     - tls://9.9.9.9
   forward:
-  # ============ Forward 规则（v10 起：塌缩为 2 条兜底，与订阅彻底解耦）============
-  # ★ v10 的唯一改动：删掉原第 1~8 条规则，只留最后两条兜底。
+  # ============ Forward 规则（f10 起：塌缩为 2 条兜底，与订阅彻底解耦）============
+  # ★ f10 的唯一改动：删掉原第 1~8 条规则，只留最后两条兜底。
   #   删掉的 8 条 = [1] domain_suffix: cn  [2] proxy_rule_set: ChinaDomain.list
   #                 [3~5] 三个机场节点域名  [6~8] cp.cloudflare.com /
   #                 connectivitycheck.platform.hicloud.com / jsdelivr.net
@@ -101,7 +101,7 @@ dns:
   #      验证：它会打印 value 集合并对任意域名做演练）。
   #   ② 「配置了 proxy_nameservers 后，代理 DNS 会**跳过 Forward 阶段**，直接走该
   #      列表」；而节点域名的解析走的正是代理 DNS ⇒ **它们本来就不会查询本节**。
-  #      所以原第 3~5 条（机场节点域名）自 v7 写出 proxy_nameservers 起就是死代码。
+  #      所以原第 3~5 条（机场节点域名）自 f7 写出 proxy_nameservers 起就是死代码。
   #   ⇒ 结论：换订阅、换机场、换节点域名、换中转 CDN，**本节都不需要改一个字**。
   #      这也正是 Surge 那套配置的形态（一份加密 DNS 列表 + 全直连，不按域名分流 DNS）。
   #
@@ -128,7 +128,7 @@ dns:
   - domain_wildcard:
       match: '*'
       value: Domestic-DNS
-  # ★ v7 改动 B：显式写 proxy_nameservers（v1~v6 都是不写）。
+  # ★ f7 改动 B：显式写 proxy_nameservers（f1~f6 都是不写）。
   #   官方 dns 文档原文：「未配置时，代理 DNS 与默认 DNS 共用 Forward 规则，**未命中回退到
   #   Bootstrap**」—— 也就是「不设置」这件事本身，就留下了一条通往明文 UDP:53 的兜底分支。
   #   设置后官方语义是「所有代理 DNS 查询强制走该列表，**Forward 规则会被跳过**」，
@@ -137,7 +137,7 @@ dns:
   #   境外解析器在电信线路上根本不可达 —— 那正是 bootstrap 会被逼出来的原因。
   #   下面 6 个端点与上面的 Domestic-DNS 完全相同、全部是 IP 字面量（⇒ 自身不需要 bootstrap
   #   解析），且已用 scripts/probe_dns_endpoints.py 逐个实测可用。
-  #   如果你发现「节点连不上」，第一件事是注释掉这 6 行（等价于回到 v6 的行为）。
+  #   如果你发现「节点连不上」，第一件事是注释掉这 6 行（等价于回到 f6 的行为）。
   proxy_nameservers:
   - https://223.5.5.5/dns-query
   - https://223.6.6.6/dns-query
@@ -446,7 +446,7 @@ rules:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Proxy/Proxy.list
     policy: Proxy
     disabled: true
-# ★ v7 核心改动：Apple_All.list -> Apple_All_No_Resolve.list
+# ★ f7 核心改动：Apple_All.list -> Apple_All_No_Resolve.list
 #   官方 rules 文档原文：「no_resolve (bool)……设为 true 时仅匹配已解析的 IP 地址，
 #   **不会触发 DNS 解析**」—— 反过来说，不带 no_resolve 的 IP 类条目**会触发解析**。
 #   Apple_All.list 里有 13 条 IP-CIDR 没带 no-resolve（139.178.128.0/18 等 Apple CDN 段），
@@ -463,9 +463,9 @@ rules:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/WeChat/WeChat.list
     policy: WeChat
 # ★ 国内域名直连的**主力**规则集。
-#   历史（v8）：v7 给 geoip:CN 加 no_resolve 治住泄露后，国内域名整片落到 default → Final → Proxy。
+#   历史（f8）：f7 给 geoip:CN 加 no_resolve 治住泄露后，国内域名整片落到 default → Final → Proxy。
 #   根因不在 DNS、在**分流**：geoip 加了 no_resolve 便不再匹配域名，国内域名的直连必须由
-#   一份「域名条目足够多」的国内规则集承接。v8 起用 ChinaMax_All_No_Resolve.list
+#   一份「域名条目足够多」的国内规则集承接。f8 起用 ChinaMax_All_No_Resolve.list
 #   （111,332 域名 + 同份 12,472 条带 no-resolve 的 IP）补齐——注意 ChinaMax.list 本身
 #   只是 IP 规则集（12,614 条里 12,472 条是 IP、域名仅 64 条），兜不住域名。
 #   现改为 Loyalsoldier `direct.txt`：共 111,160 条，**纯域名**

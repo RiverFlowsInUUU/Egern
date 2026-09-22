@@ -4,7 +4,7 @@
 > 「DNS 不泄露」和「分流正确」不是两个独立目标 —— 它们是**同一个机制的正面和反面**。
 > 一份配置可以做到 DNS 审计全绿，同时国内网站全部走代理。
 
-> **模板现状更新**：本文记录的是 v8 时期用 `ChinaMax_All_No_Resolve.list` 完成这次修复的实测与推导。
+> **模板现状更新**：本文记录的是 f8 时期用 `ChinaMax_All_No_Resolve.list` 完成这次修复的实测与推导。
 > 当前模板已把该规则集的 URL 换成 Loyalsoldier **`direct.txt`**（约 11.1 万条**纯域名**，零 IP 条目；数字随上游更新变动）；
 > 原理完全一致 —— 「IP 规则带 `no_resolve`」必须与「一份域名条目足够多的国内直连规则集」成对交付。
 > 换用纯域名规则集后，它自身不触发解析，`no-resolve` 那一半由 `geoip: CN` 承担。
@@ -47,8 +47,8 @@
 
 | 阶段 | 改动 | DNS 审计 | 分流 | 说明 |
 |---|---|---|---|---|
-| **v7** | 给 `geoip: CN` 补 `no_resolve`；换用 `Apple_All_No_Resolve.list`；显式写 `proxy_nameservers` | ✅ `check_egern_dns.py` → `0 high / 3 low / 43 ok`<br>✅ `audit_ruleset_noresolve.py` → `OK (20/20)` | ❌ **国内域名整片落 `default → Final → Proxy`** | **两个脚本双双全绿，配置却不可用** |
-| **v8** | 只改一条：`ChinaMax.list` → `ChinaMax_All_No_Resolve.list` | ✅ 同上（无退化） | ✅ **15/15 国内探针命中 `DIRECT`** | 补回国内域名直连 |
+| **f7** | 给 `geoip: CN` 补 `no_resolve`；换用 `Apple_All_No_Resolve.list`；显式写 `proxy_nameservers` | ✅ `check_egern_dns.py` → `0 high / 3 low / 43 ok`<br>✅ `audit_ruleset_noresolve.py` → `OK (20/20)` | ❌ **国内域名整片落 `default → Final → Proxy`** | **两个脚本双双全绿，配置却不可用** |
+| **f8** | 只改一条：`ChinaMax.list` → `ChinaMax_All_No_Resolve.list` | ✅ 同上（无退化） | ✅ **15/15 国内探针命中 `DIRECT`** | 补回国内域名直连 |
 
 **用户的原始反馈是这样的：**
 
@@ -132,7 +132,7 @@ comm -23 dA.txt dB.txt | wc -l    # 期望 0
 
 实测结果（同一份脚本跑两个版本）：
 
-| 探针 | v7（问题版） | v8（修复版） |
+| 探针 | f7（问题版） | f8（修复版） |
 |---|---|---|
 | `jd.com` / `zhihu.com` / `163.com` / `qq.com` / `douyin.com` / `meituan.com` / `xiaohongshu.com` | `default → Final` ❌ | `ChinaMax_All_No_Resolve` → **`DIRECT`** ✅ |
 | 国内合计 | **7/15 落 `Final`** | **15/15 `DIRECT`** |

@@ -250,7 +250,7 @@ def main():
                 direct_ips.add(str(body.get("match")).split("/")[0])
     routed_direct = sorted({ep_ip(e) for e in eps} & direct_ips)
     print(f"  rules 中判给 DIRECT 的端点: {routed_direct if routed_direct else '（无）'}")
-    # ⭐ v3.1：第二判据 —— 端点本身是国内知名解析器 IP 时，国内链路直连可达，
+    # ⭐ f3.1：第二判据 —— 端点本身是国内知名解析器 IP 时，国内链路直连可达，
     # 无需在 rules 里写装饰性 DIRECT 规则（与 check_egern_dns.py 的 group_reach 判据 B 一致）。
     known_domestic = sorted({ep_ip(e) for e in eps} & DOMESTIC_RESOLVER_IPS)
     reachable = bool(routed_direct or known_domestic)

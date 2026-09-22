@@ -175,8 +175,8 @@ Egern 有**两条互不相通**的解析路径。**不理解这个，就会改�
 
 > ⚠️ **这两条不能叠加。** 一旦写了 `proxy_nameservers`，`forward` 里的规则对节点域名**完全不起作用**
 > （代理 DNS 根本不查 `forward` 阶段）。所以"在 `forward` 里为节点域名加一条 `domain_suffix → 国内加密组"
-> 这个曾经有效的做法，**自 v7 引入 `proxy_nameservers` 起就是死代码** —— 加上去也不会被查询到。
-> v10 又把 `forward` 塌缩成纯兜底，即使不写 `proxy_nameservers`，节点域名也已经命中兜底。
+> 这个曾经有效的做法，**自 f7 引入 `proxy_nameservers` 起就是死代码** —— 加上去也不会被查询到。
+> f10 又把 `forward` 塌缩成纯兜底，即使不写 `proxy_nameservers`，节点域名也已经命中兜底。
 > ⇒ 今天还值得做的只有：**节点 `server` 写成 IP**；若域名被污染导致连不上，再用 `hosts` 把它钉到 IP。
 
 **社区事实标准配置（Repcz）有一句比官方文档更实用的话：**

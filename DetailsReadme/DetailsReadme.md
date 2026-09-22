@@ -13,7 +13,7 @@
 
 1. [配置框架逐段详解](#1-配置框架逐段详解)
 2. [防泄露原理：从机制到推导](#2-防泄露原理从机制到推导)
-3. [版本谱系 v1–v10（完整）](#3-版本谱系-v1v10完整)
+3. [版本谱系 f1–f10（完整）](#3-版本谱系-f1f10完整)
 4. [审计清单（18 项）](#4-审计清单18-项)
 5. [规则集开销实测](#5-规则集开销实测)
 6. [已知代价与取舍](#6-已知代价与取舍)
@@ -133,7 +133,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 
 另有 `hijack_dns`（接管 `:53` 返回 Fake IP）。
 
-> 关于 `Foreign-DNS` 组：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`routing_v1` 里它被**整组注释**保留作 A/B 备用，**`routing_v2` 起整段删除**。想恢复境外解析答案，需自行在 `upstreams` 里加回该组、并把 `forward` 兜底的 `value` 改过去 —— 但要注意「先有代理才敢解析」的启动期明文风险。详见第 6 节。
+> 关于 `Foreign-DNS` 组：迭代 f10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`routing_v1` 里它被**整组注释**保留作 A/B 备用，**`routing_v2` 起整段删除**。想恢复境外解析答案，需自行在 `upstreams` 里加回该组、并把 `forward` 兜底的 `value` 改过去 —— 但要注意「先有代理才敢解析」的启动期明文风险。详见第 6 节。
 
 ### 1.6 `rule_sets` 与 `no_resolve` 要求
 
@@ -202,37 +202,37 @@ forward:
 
 ---
 
-## 3. 版本谱系 v1–v10（完整）
+## 3. 版本谱系 f1–f10（完整）
 
 > 以下每版描述均为**机制层面**的演进，不涉及任何具体节点域名或私人配置。验收数据来自实际真机测试。
 
 | 版本 | 改动 | 结果 |
 |---|---|---|
-| **v1** | 第一版加固 | ❌ 私自加了 `proxy_nameservers`，把代理侧解析钉死在国内 → 泄露从「偶发」变「确定」 |
-| **v2** | 端点改 IP 字面量 + DNS 端点显式路由 + 加 `block_ips` | ❌ `proxy_nameservers` 仍在，问题未解 |
-| **v3** | 删 `proxy_nameservers`；显式覆盖节点域名；forward 双兜底 | ✅ 修掉节点域名明文解析 ⚠️ 漏了 latency 测试域名 |
-| **v4** | 补 profile 自身必需解析（两个延迟测试域名 + jsdelivr）→ 国内组 | ✅ 修掉「每轮测速触发一次」的持续泄露 |
-| **v5** | `upstreams` 全部改 IP 字面量 + `bootstrap` 扩到 3 个国内 IP | ✅ 消灭 bootstrap 用途① |
-| **v6** | forward 两条兜底的 value：境外组 → 国内组 | ✅ 消灭 bootstrap 用途②（兜底不再依赖代理） |
-| **v7** | ① `Apple_All.list` → `Apple_All_No_Resolve.list`；② 显式写 `proxy_nameservers`；③ 给 `geoip: CN` 补 `no_resolve` | ✅ 泄露治好（第③条是真正答案）<br>❌ **但同一手把国内域名的直连路径一起关掉了** |
-| **v8** | **只改一条**：`ChinaMax.list` → `ChinaMax_All_No_Resolve.list`（补齐国内域名直连） | ✅ **泄露与分流同时成立 —— 真机验收通过** |
-| **v9** | 删除整个顶层 `mitm` 段（`ca_p12` + `ca_passphrase`） | ✅ 用户主动要求「暂时不用 HTTPS 解密」；纯删除，不触碰 DNS / 分流任何一行；证书串零残留 |
-| **v10** | `dns.forward` 由 10 条塌缩为 2 条兜底（删 8 条结构性冗余 + 2 处死引用） | ✅ 与订阅 / 节点域名解耦；审计通过，订阅耦合 4 → 0 |
+| **f1** | 第一版加固 | ❌ 私自加了 `proxy_nameservers`，把代理侧解析钉死在国内 → 泄露从「偶发」变「确定」 |
+| **f2** | 端点改 IP 字面量 + DNS 端点显式路由 + 加 `block_ips` | ❌ `proxy_nameservers` 仍在，问题未解 |
+| **f3** | 删 `proxy_nameservers`；显式覆盖节点域名；forward 双兜底 | ✅ 修掉节点域名明文解析 ⚠️ 漏了 latency 测试域名 |
+| **f4** | 补 profile 自身必需解析（两个延迟测试域名 + jsdelivr）→ 国内组 | ✅ 修掉「每轮测速触发一次」的持续泄露 |
+| **f5** | `upstreams` 全部改 IP 字面量 + `bootstrap` 扩到 3 个国内 IP | ✅ 消灭 bootstrap 用途① |
+| **f6** | forward 两条兜底的 value：境外组 → 国内组 | ✅ 消灭 bootstrap 用途②（兜底不再依赖代理） |
+| **f7** | ① `Apple_All.list` → `Apple_All_No_Resolve.list`；② 显式写 `proxy_nameservers`；③ 给 `geoip: CN` 补 `no_resolve` | ✅ 泄露治好（第③条是真正答案）<br>❌ **但同一手把国内域名的直连路径一起关掉了** |
+| **f8** | **只改一条**：`ChinaMax.list` → `ChinaMax_All_No_Resolve.list`（补齐国内域名直连） | ✅ **泄露与分流同时成立 —— 真机验收通过** |
+| **f9** | 删除整个顶层 `mitm` 段（`ca_p12` + `ca_passphrase`） | ✅ 用户主动要求「暂时不用 HTTPS 解密」；纯删除，不触碰 DNS / 分流任何一行；证书串零残留 |
+| **f10** | `dns.forward` 由 10 条塌缩为 2 条兜底（删 8 条结构性冗余 + 2 处死引用） | ✅ 与订阅 / 节点域名解耦；审计通过，订阅耦合 4 → 0 |
 
 ### 每一版的验证结果
 
 > ⚠️ **读数说明（很重要）**：下表的所有数字都是**作者的「自用配置」**跑出来的 ——
-> 它带真实节点、且 v1–v8 时期 `rules` 里还有 DNS 端点路由规则。
-> **本仓库发布的是一份脱敏模板**（`proxies: []`、无节点、v10 已删段 A 路由），
+> 它带真实节点、且 f1–f8 时期 `rules` 里还有 DNS 端点路由规则。
+> **本仓库发布的是一份脱敏模板**（`proxies: []`、无节点、f10 已删段 A 路由），
 > 它的审计读数**与下表不同**，且**从未声称全绿**。两者的差异见本节末尾「发布模板的审计读数」。
 
 | 版本 | `check_egern_dns.py` | `audit_ruleset_noresolve.py` | `audit_routing_coverage.py` |
 |---|---|---|---|
-| v6 | 0 high / 3 low / 43 ok | ❌ **HIGH** | 未覆盖 |
-| v7 | 0 high / 3 low / 43 ok | ✅ OK (20/20) | ❌ **7/15 国内探针落 Final** |
-| **v8** | **0 high / 3 low / 43 ok** | ✅ **OK (20/20)** | ✅ **15/15 DIRECT** |
+| f6 | 0 high / 3 low / 43 ok | ❌ **HIGH** | 未覆盖 |
+| f7 | 0 high / 3 low / 43 ok | ✅ OK (20/20) | ❌ **7/15 国内探针落 Final** |
+| **f8** | **0 high / 3 low / 43 ok** | ✅ **OK (20/20)** | ✅ **15/15 DIRECT** |
 
-> v7 那一行是本项目最重要的一张表：**两个脚本双双全绿，配置却不可用。**
+> f7 那一行是本项目最重要的一张表：**两个脚本双双全绿，配置却不可用。**
 
 ### 发布模板的审计读数（与上表不同）
 
@@ -240,22 +240,22 @@ forward:
 
 | 脚本 | 发布模板读数 | 说明 |
 |---|---|---|
-| `check_egern_dns.py` | ✅ **0 high / 2 low / 24 ok（退出码 0）** | 见下方「v3.1 判据修正」；24 这个数对应 `routing_v2` 起的全部版本（`routing_v1` 是 30 ok，多出的 6 项来自它比 `routing_v2` 多的一批 DNS 端点路由规则） |
+| `check_egern_dns.py` | ✅ **0 high / 2 low / 24 ok（退出码 0）** | 见下方「f3.1 判据修正」；24 这个数对应 `routing_v2` 起的全部版本（`routing_v1` 是 30 ok，多出的 6 项来自它比 `routing_v2` 多的一批 DNS 端点路由规则） |
 | `audit_routing_coverage.py` | ✅ 15/15 国内探针 `DIRECT` | 分流正确性不受脱敏影响 |
 | `audit_dns_forward.py --drill` | ✅ 通过（退出码 0） | `forward` value 单值、订阅耦合 0 |
 | `audit_region_filters.py` | ✅ 6 个地区组关键词全部同步（退出码 0） | 负向断言与地区组 filter 逐字一致 |
 
-**v3.1 判据修正（2026-09-20）** —— 曾有一段时间发布模板**过不了** `check_egern_dns.py`：
+**f3.1 判据修正（2026-09-20）** —— 曾有一段时间发布模板**过不了** `check_egern_dns.py`：
 
 - **现象**：3 high / 8 low / 20 ok，退出码 1。
-- **根因**：v10 删掉段 A（DNS 端点固定路由）后，脚本 `group_reach` 的判据是
+- **根因**：f10 删掉段 A（DNS 端点固定路由）后，脚本 `group_reach` 的判据是
   「端点全为 IP **且至少一个在 `rules` 里判给 `DIRECT`**」，后半句在无段 A 的模板里**永远不成立** ⇒
   兜底组 `Domestic-DNS` 被恒定判为「依赖代理」，连锁触发 3 条 HIGH（兜底组 + 两个延迟测试域名）。
   **这是判据的载体选错，不是配置的问题。**
 - **修法**：补**第二判据** —— 端点全为 IP 且**至少一个是国内知名解析器 IP**（内置白名单：
   阿里 `223.5.5.5`/`223.6.6.6`、腾讯 `119.29.29.29`、`1.12.12.12`、`120.53.53.53` …）时同样判「直连可达」。
   此判据在 profile 文本内可验证、且语义等价于「不经代理即可到达」。
-- **没有放松防护**：v5 踩过的坑仍被拦住 —— **一个全由境外 IP 组成的组依然判 HIGH**
+- **没有放松防护**：f5 踩过的坑仍被拦住 —— **一个全由境外 IP 组成的组依然判 HIGH**
   （境外解析器必须经代理才可达）；含主机名端点的组依然判 HIGH。已用反例做过回归验证。
 - **四处同步**：`check_egern_dns.py` 的 `group_reach` + 其国内端点路由检查、
   `audit_dns_forward.py` 的 `direct_ips` 收集 + 结论判定。
@@ -284,19 +284,19 @@ forward:
 
 | # | 表现 | 真实原因 | 补上的审计维度 |
 |---|---|---|---|
-| 1 | v1/v2 脚本报 0 high | 靠加配置压指标（`proxy_nameservers`）掩盖问题 | — |
-| 2 | v3 脚本报 0 high | 审计器没看 latency 测试域名这一类 | 清单 15 |
-| 3 | v5/v6 脚本报 0 high | 判据不足：`group_ready` 只要求端点全 IP + 至少一个被判路由，没要求那一条是 `DIRECT` | 收紧为 `group_reach` |
-| 4 | v6 脚本报 0 high | 审计维度缺失：只看 profile 文本，没看它引用的规则集文件 | `audit_ruleset_noresolve.py`（清单 16） |
-| 5 | v7 两个脚本都全绿 | 审计不覆盖分流——治泄露的副作用没人检查 | `audit_routing_coverage.py`（清单 17） |
+| 1 | f1/f2 脚本报 0 high | 靠加配置压指标（`proxy_nameservers`）掩盖问题 | — |
+| 2 | f3 脚本报 0 high | 审计器没看 latency 测试域名这一类 | 清单 15 |
+| 3 | f5/f6 脚本报 0 high | 判据不足：`group_ready` 只要求端点全 IP + 至少一个被判路由，没要求那一条是 `DIRECT` | 收紧为 `group_reach` |
+| 4 | f6 脚本报 0 high | 审计维度缺失：只看 profile 文本，没看它引用的规则集文件 | `audit_ruleset_noresolve.py`（清单 16） |
+| 5 | f7 两个脚本都全绿 | 审计不覆盖分流——治泄露的副作用没人检查 | `audit_routing_coverage.py`（清单 17） |
 
-### 反向教训：审计**不通过**但配置是对的（v10，2026-09-20）
+### 反向教训：审计**不通过**但配置是对的（f10，2026-09-20）
 
 上面 5 次都是「审计绿了但配置不可用」。第 6 次是**镜像问题**：
 
 | # | 表现 | 真实原因 | 修法 |
 |---|---|---|---|
-| 6 | v10 删段 A 后，发布模板 `check_egern_dns.py` 报 **3 high**、退出码 1 | **判据的载体过时了** —— `group_reach` 依赖 `rules` 里的 `ip_cidr → DIRECT` 作为「不经代理可达」的证据；v10 把那批规则删掉后证据消失，但配置本身没问题 | 补第二判据「端点全为 IP + 至少一个是国内知名解析器」；**两份拷贝同步改**，并用反例（全境外 IP 组）回归验证防护未被放松 |
+| 6 | f10 删段 A 后，发布模板 `check_egern_dns.py` 报 **3 high**、退出码 1 | **判据的载体过时了** —— `group_reach` 依赖 `rules` 里的 `ip_cidr → DIRECT` 作为「不经代理可达」的证据；f10 把那批规则删掉后证据消失，但配置本身没问题 | 补第二判据「端点全为 IP + 至少一个是国内知名解析器」；**两份拷贝同步改**，并用反例（全境外 IP 组）回归验证防护未被放松 |
 
 **这条要记的是**：判据和被测对象是**同一套假设的两端**。改了配置、必须回跑审计脚本 —— 否则
 脚本会开始报 false positive，而**退出码这个守门判据就成了摆设**。改配置的人有责任验另一端。
@@ -368,8 +368,8 @@ forward:
 
 ## 6. 已知代价与取舍
 
-- **`Foreign-DNS` 已删除**：迭代 v10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`routing_v1` 曾**整组注释**保留为 A/B 备用，**`routing_v2` 起整段删除**。要恢复境外解析答案，需自行在 `upstreams` 里加回该组。风险提醒：若用它作兜底且代理未就绪，会掉进明文 `:53`。
-- **两条线 × 双形态**：可选只有 `profiles/lazy.yaml`（**懒人版**，4 组 / 9 条规则）与 `profiles/routing_v2.5.yaml`（**分流版 · 推荐**，完整分流）；其余 `routing_v2.4` / `routing_v2.3` / `routing_v2.2` / `routing_v2.1` / `routing_v2` / `routing_v1` 都是分流线的历代旧版、保留以备对照（`routing_v1`~`routing_v2.1` 为 29 组 / 24 条，`routing_v2.2`~`routing_v2.5` 为 27 组 / 24 条）。**各版本逐项差异见 [`docs/07-文件版本沿革.md`](../docs/07-文件版本沿革.md)（权威版本）**。⚠️ 文件名 `routing_v1`…`routing_v2.5` 是**文件版本**，与 `docs/06` 的「配置迭代谱系 v1~v10」是两个维度。
+- **`Foreign-DNS` 已删除**：迭代 f10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`routing_v1` 曾**整组注释**保留为 A/B 备用，**`routing_v2` 起整段删除**。要恢复境外解析答案，需自行在 `upstreams` 里加回该组。风险提醒：若用它作兜底且代理未就绪，会掉进明文 `:53`。
+- **两条线 × 双形态**：可选只有 `profiles/lazy.yaml`（**懒人版**，4 组 / 9 条规则）与 `profiles/routing_v2.5.yaml`（**分流版 · 推荐**，完整分流）；其余 `routing_v2.4` / `routing_v2.3` / `routing_v2.2` / `routing_v2.1` / `routing_v2` / `routing_v1` 都是分流线的历代旧版、保留以备对照（`routing_v1`~`routing_v2.1` 为 29 组 / 24 条，`routing_v2.2`~`routing_v2.5` 为 27 组 / 24 条）。**各版本逐项差异见 [`docs/07-文件版本沿革.md`](../docs/07-文件版本沿革.md)（权威版本）**。⚠️ 文件名 `routing_v1`…`routing_v2.5` 是**文件版本**，与 `docs/06` 的「配置迭代谱系 f1~f10」是两个维度。
 - **图标整合进本仓库**：26 个图标源自已整合进 `icons/`，模板不再跨项目引用图标地址。来源归属与许可见 [`docs/10-图标与许可.md`](../docs/10-图标与许可.md)（公开仓库署名）。
 - **删除虚拟节点（不保留引用）**：模板 `proxies` 为空，占位节点名引用已从 `policy_groups` 剥除（组间引用保留；`routing_v2.3` 起**已无空组**）。不保留虚假结构，由你自行填写。
 - **与订阅解耦**：forward 不写任何节点 / 订阅域名，换订阅无需改动 DNS 段（清单 18 验证订阅耦合 4 → 0）。
@@ -494,7 +494,7 @@ S="skill/scripts"
 > **实证（本模板）**：profile 里 `no_resolve` **只出现 1 次**（`geoip: CN`）。模板引用的 **21 个**远程规则集中，**11 个是纯域名**（`direct.txt` / Gemini / Claude / Anthropic / AI / GitHub / Microsoft / YouTubeMusic / AWAvenue-Ads / **jinx white-guard** / **jinx ads**，无需 `no-resolve`）、**10 个含 IP 条目**（Lan / ChatGPT / Spotify / YouTube / Google / Telegram / Twitter / WeChat / Apple、以及 disabled 的 Proxy），而这 10 个的 IP 条目**已在上游 `.list` 内全部自带 `,no-resolve`**（逐条核对：14/14、2/2、6+5、13/13、97/97 …）。所以「看起来到处是 `no-resolve`」是**上游规则集自带的**，不是 profile 在堆 —— profile 只需管好自己那一条 `geoip: CN`。
 
 **Q5：`Foreign-DNS` 组去哪了？我还能用吗？**
-`routing_v2` 起已整段删除（迭代 v10 起它就无引用，`routing_v1` 曾注释保留为 A/B 备用）。想用境外解析答案，需自行在 `upstreams` 里加回该组（6 个境外 DoH/DoT 端点），并把 forward 兜底 `value` 改过去。但注意：若它作兜底且代理未就绪，会掉进明文 `:53` —— 迭代 v10 默认用国内组兜底正是为了避免这条路径。
+`routing_v2` 起已整段删除（迭代 f10 起它就无引用，`routing_v1` 曾注释保留为 A/B 备用）。想用境外解析答案，需自行在 `upstreams` 里加回该组（6 个境外 DoH/DoT 端点），并把 forward 兜底 `value` 改过去。但注意：若它作兜底且代理未就绪，会掉进明文 `:53` —— 迭代 f10 默认用国内组兜底正是为了避免这条路径。
 
 **Q6：模板为什么没有示例节点？**
 避免占位节点在分流组里留下悬空引用（过度设计）。你填真实节点后，再把对应组的 `policies` 填上节点名 / 订阅组名。

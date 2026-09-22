@@ -5,9 +5,9 @@
 为什么必须有这个脚本
 --------------------
 `check_egern_dns.py` 只看 DNS 面，`audit_ruleset_noresolve.py` 只看"会不会强制解析"。
-两者都看不见**路由本身对不对**。本项目第三类事故（2026-09-19 v8）正是栽在这里：
+两者都看不见**路由本身对不对**。本项目第三类事故（2026-09-19 f8）正是栽在这里：
 
-    v7 给 `geoip: CN` 加 `no_resolve: true` 治好了 DNS 泄露（官方语义：不再触发解析），
+    f7 给 `geoip: CN` 加 `no_resolve: true` 治好了 DNS 泄露（官方语义：不再触发解析），
     但这同时让 geoip **不再匹配域名** —— 而那条 geoip 恰恰是原配置里
     "国内域名走直连"的唯一机制（收到域名 → 强制解析 → 判出 CN IP → DIRECT）。
     本该补位的 ChinaMax 规则兜不住：按 blackmatrix7 自己的 README，

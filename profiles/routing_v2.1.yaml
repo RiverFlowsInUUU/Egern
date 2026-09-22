@@ -369,7 +369,7 @@ rules:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Proxy/Proxy.list
     policy: Proxy
     disabled: true
-# ★ v7 核心改动：Apple_All.list -> Apple_All_No_Resolve.list
+# ★ f7 核心改动：Apple_All.list -> Apple_All_No_Resolve.list
 #   官方 rules 文档原文：「no_resolve (bool)……设为 true 时仅匹配已解析的 IP 地址，
 #   **不会触发 DNS 解析**」—— 反过来说，不带 no_resolve 的 IP 类条目**会触发解析**。
 #   Apple_All.list 里有 13 条 IP-CIDR 没带 no-resolve（139.178.128.0/18 等 Apple CDN 段），
@@ -386,9 +386,9 @@ rules:
     match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/WeChat/WeChat.list
     policy: WeChat
 # ★ 国内域名直连的**主力**规则集。
-#   历史（v8）：v7 给 geoip:CN 加 no_resolve 治住泄露后，国内域名整片落到 default → Final → Proxy。
+#   历史（f8）：f7 给 geoip:CN 加 no_resolve 治住泄露后，国内域名整片落到 default → Final → Proxy。
 #   根因不在 DNS、在**分流**：geoip 加了 no_resolve 便不再匹配域名，国内域名的直连必须由
-#   一份「域名条目足够多」的国内规则集承接。v8 起用 ChinaMax_All_No_Resolve.list
+#   一份「域名条目足够多」的国内规则集承接。f8 起用 ChinaMax_All_No_Resolve.list
 #   （111,332 域名 + 同份 12,472 条带 no-resolve 的 IP）补齐——注意 ChinaMax.list 本身
 #   只是 IP 规则集（12,614 条里 12,472 条是 IP、域名仅 64 条），兜不住域名。
 #   现改为 Loyalsoldier `direct.txt`：共 111,160 条，**纯域名**

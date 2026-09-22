@@ -194,7 +194,7 @@ egern-anti-dns-leak/
 
 ## 📖 更多文档
 
-- 📘 [`DetailsReadme/`](DetailsReadme/) —— 逐段详解 · 原理推导 · 配置迭代谱系 v1–v10 · 18 项审计清单 · 已知取舍 · FAQ
+- 📘 [`DetailsReadme/`](DetailsReadme/) —— 逐段详解 · 原理推导 · 配置迭代谱系 f1–f10 · 18 项审计清单 · 已知取舍 · FAQ
 - 📂 [`docs/`](docs/) —— 全部 10 篇：DNS 怎么工作 / 为什么泄露 / 加固清单 / 逐段讲解 / `no_resolve` 成对交付 / 实测谱系 / 文件版本沿革 / 审计读数 / 注意事项 / 图标与许可
 - ⚠️ [`docs/09`](docs/09-注意事项.md) —— 使用前必看
 - 🎨 [`docs/10`](docs/10-图标与许可.md) —— 图标与许可
