@@ -11,7 +11,8 @@
 ```
 README.md                                   # 三条铁律 + 一图看懂回退链
 profiles/lazy.yaml / lazy.min.yaml          # 懒人版 · 可选（4 组 / 9 条规则，Final 隐藏、AD 只留 REJECT；不挂版本号）
-profiles/routing_v2.4.yaml / .min.yaml      # 分流版 · 推荐（脱敏模板：无节点、无订阅、无证书；机场槽位 2 个）
+profiles/routing_v3.yaml / .min.yaml        # 分流版 · 推荐（脱敏模板：无节点、无订阅、无证书；机场槽位 1 个）
+profiles/routing_v2.4.yaml / .min.yaml      # 保留（v3 前一版）
 profiles/routing_v2.3.yaml / .min.yaml      # 保留（与 routing_v2.4 只差 rule_set 的 update_interval）
 profiles/routing_v2.2.yaml / .min.yaml      # 保留（与 routing_v2.3 只差 4 处修正）
 profiles/routing_v2.1.yaml / .min.yaml      # 保留（与 routing_v2.2 只差机场槽位：4 个 vs 2 个）
@@ -31,7 +32,7 @@ docs/10-图标与许可.md                       # 图标来源 / MIT 许可 / �
 skill/                                      # 本 skill（含全部脚本）
 ```
 
-> **可选版本只有两个** —— `routing_v2.4`（分流版 · 推荐）与 `lazy`（懒人版）；
+> **可选版本只有两个** —— `routing_v3`（分流版 · 推荐）与 `lazy`（懒人版）；
 > 其余 `routing_v2.x` / `routing_v1` 都是分流线的历代旧版，保留以备对照。
 
 **要更新模板时**：**直接在仓库里改 `profiles/*.yaml` 即可。** 这份模板早已完成脱敏
@@ -44,7 +45,7 @@ skill/                                      # 本 skill（含全部脚本）
 > `_publish_to_github.py`（Git Data API 单次提交；空仓库需先落初始化提交，
 > 否则 `POST /git/blobs` 报 `409 Git Repository is empty`）。
 > ⚠️ 这些脚本**不在本仓库**（避免暴露构建侧私人路径）—— 2026-09-21 核查时**本机也已找不到**。
-> 换句话说"不要手改仓库里的 yaml"这条老规矩**已作废**：现在的 `routing_v2.1` / `routing_v2.2` / `routing_v2.3` / `routing_v2.4`
+> 换句话说"不要手改仓库里的 yaml"这条老规矩**已作废**：现在的 `routing_v2.1` / `routing_v2.2` / `routing_v2.3` / `routing_v2.4` / `routing_v3`
 > 就是在仓库里直接改出来的。若将来要恢复"从自用配置生成"的流程，方法论见 skill
 > `github-publish-sanitized-repo`，需按它重建脚本。
 

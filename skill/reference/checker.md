@@ -19,7 +19,7 @@
 "<venv>/Scripts/python.exe" scripts/audit_ruleset_noresolve.py profile.yaml  # ★★ 规则集 IP 条目 no-resolve 审计（清单 16）
 "<venv>/Scripts/python.exe" scripts/audit_ruleset_noresolve.py --url <ruleset-url>
 "<venv>/Scripts/python.exe" scripts/audit_routing_coverage.py profile.yaml   # ★★ 分流覆盖审计（清单 17，域名→命中规则→策略）
-"<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml         # ★ forward 单值性/订阅耦合审计（清单 18）
+"<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml         # ★ forward 单值性（非 reject 去向）/订阅耦合审计（清单 18）
 "<venv>/Scripts/python.exe" scripts/audit_dns_forward.py profile.yaml --drill # ↑ --drill 可选：加合成"未来订阅"域名多演练一遍
 "<venv>/Scripts/python.exe" scripts/audit_region_filters.py profile.yaml      # ★ 地区组 filter 与 Other Regions 负向断言的「两份拷贝」同步校验
 "<venv>/Scripts/python.exe" scripts/probe_doh.py                    # 只测 DoH 线格式

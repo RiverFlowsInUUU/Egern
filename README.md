@@ -6,7 +6,7 @@
 
 [![Egern](https://img.shields.io/badge/Egern-iOS%20%7C%20macOS-1f6feb?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
 [![Profiles](https://img.shields.io/badge/Profiles-lazy%20%7C%20routing-0969da?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
-[![Groups](https://img.shields.io/badge/Groups-4%20%7C%2027-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
+[![Groups](https://img.shields.io/badge/Groups-4%20%7C%2026-8250df?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
 [![DNS](https://img.shields.io/badge/DNS-Zero%20Leak-2ea043?style=flat-square)](https://github.com/RiverFlowsInUUU/Egern)
 [![License](https://img.shields.io/badge/License-MIT-dfb317?style=flat-square)](docs/10-图标与许可.md)
 
@@ -23,14 +23,14 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/lazy.min.y
 🧭 **分流版** · 可控 · 随心
 
 ```
-https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2.4.min.yaml
+https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v3.min.yaml
 ```
 
 ---
 
 ## 🧭 井然有序
 
-懒人版 4 组、分流版 27 组，自上而下：
+懒人版 4 组、分流版 26 组，自上而下：
 
 | 组 | 🪶 懒人版 | 🧭 分流版 |
 |:---|:---:|:---:|
@@ -46,7 +46,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 | 🌐 `Final` | ✅ | ✅ |
 
 > 🪶 懒人版无订阅槽位，`Proxy` 自己填节点，长期沿用无版本号。
-> 🧭 分流版 = `routing_v2.4`（历代见 [`docs/07`](docs/07-文件版本沿革.md)），导入前填 2 处订阅槽位 `urls`（`Airport-A` / `Airport-B`）。
+> 🧭 分流版 = `routing_v3`（历代见 [`docs/07`](docs/07-文件版本沿革.md)），导入前填 1 处订阅槽位 `urls`（单个隐藏组 `Airport`）。
 > 🔍 选路、地区筛法见 [`docs/04`](docs/04-模板逐段讲解.md)；规则顺序与默认出口见 [`docs/12`](docs/12-分流顺序.md)；带注释的原始文件见 [`profiles/`](profiles/)。
 
 ---
@@ -70,7 +70,7 @@ https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/profiles/routing_v2
 
 | | 路径 | 内容 |
 |:--:|:-----|:-----|
-| 📁 | [`profiles/`](profiles/) | 14 份配置：lazy + routing_v1~v2.4，各含带注释 / 纯配置 |
+| 📁 | [`profiles/`](profiles/) | 16 份配置：lazy + routing_v1~v3，各含带注释 / 纯配置 |
 | 🖼️ | [`icons/`](icons/) | 策略组图标 |
 | 📚 | [`docs/`](docs/) | 12 篇专题 |
 | 📘 | [`DetailsReadme/`](DetailsReadme/DetailsReadme.md) | 完整技术文档 |

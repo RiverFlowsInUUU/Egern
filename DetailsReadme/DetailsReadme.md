@@ -70,7 +70,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
   见下方「组清单与要点」；逐段讲解见 `docs/04-模板逐段讲解.md` §4）。
 - **图标**：模板用到的 26 个分流组图标（整合自 RiverFlowsInUUU/Rule、jnlaoshu/MySelf、Koolson/Qure 三个公开仓库）已统一下载进本仓库 `icons/`，全部以 `https://raw.githubusercontent.com/RiverFlowsInUUU/Egern/main/icons/<file>` 形式引用，**不再跨项目引用任何图标地址**。
 
-#### 组清单与要点（`routing_v2.4`）
+#### 组清单与要点（`routing_v3`）
 
 **节点来源**（2 个订阅槽位）：`Airport-A` / `Airport-B`（后者另带一条 `urls_disabled` 示例）。
 `routing_v2.1` 及更早为 4 个槽位（多出 `Airport-C` / `Airport-Free`）—— `routing_v2.2` 精简掉，选路能力不变。
@@ -135,7 +135,7 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 | `upstreams` | 默认 DNS 的解析器组 | 仅 `Domestic-DNS`（**4 个**国内加密端点 = 2 机构 × 2 协议，全为 IP 字面量） |
 | `bootstrap` | 默认 DNS 的回退（明文 `:53`） | **2 个**国内公共 DNS 的 IP（阿里 + 腾讯），**不含 `system`** |
 | `proxy_nameservers` | 代理 DNS（解析节点 `server` 里的域名），**硬覆盖** | **4 个**国内加密端点，与 `upstreams` 一致 |
-| `forward` | 默认 DNS 按域名选上游 | **1 条 catch-all 兜底**（见 2.4） |
+| `forward` | 默认 DNS 按域名选上游 | **4 条**：白名单 → 两条广告 `reject` → catch-all 兜底（见 2.4） |
 
 另有 `hijack_dns`（接管 `:53` 返回 Fake IP）。
 
@@ -183,20 +183,32 @@ Egern 的分流组**按类型做键**，而不是平铺的 `name` 字段。一�
 > - **规则集文件顶层**：Egern 原生 YAML 规则集里的 `no_resolve: true`，影响整文件。
 > - **规则集条目级**：Surge `.list` 里的 `IP-CIDR,x/y,no-resolve`——第三方 `.list` 走这一层，也是缺陷最常藏身之处（清单 16）。
 
-**③ `forward` 塌缩为一条 catch-all 兜底**
+**③ `forward`：白名单 → 广告 `reject` → catch-all（`routing_v2.4` 及更早只有一条 catch-all）**
 ```yaml
 forward:
-  - domain_wildcard: '*'     value: Domestic-DNS
+  - proxy_rule_set: <surge-white-guard.list>  value: Domestic-DNS   # 白名单先拿到解析
+  - proxy_rule_set: <surge-ads.list>          value: reject         # 广告：解析阶段拒答
+  - proxy_rule_set: <AWAvenue…-RULE-SET.list> value: reject
+  - domain_wildcard: '*'                      value: Domestic-DNS   # 兜底
 ```
+> **`routing_v3` 起扩为 4 条**（2026-09-23，对齐 Surge 的 `pre-matching` 拦截）：
+> 官方 `value` 字段规定特殊值 **`reject` ——「refuse the query and return an empty response」**，
+> 命中即在**解析阶段**拒答，连接根本不会发起，效果等价 Surge 的 `pre-matching REJECT`。
+> ⚠️ 顺序是命门：**白名单必须排在两条广告清单之前**（AWAvenue 会命中白名单里 10 条功能域，
+> 如 `jpush.cn` / `apd-pcdnwx*` / `tnc3-*`），否则白名单域名连解析都拿不到。
 > `routing_v1` 里是两条（`domain_regex: '.'` + `domain_wildcard: '*'`）；`routing_v2.1` 删掉了 `domain_regex` ——
 > 它与 `domain_wildcard` 语义完全重叠（任何域名两条都命中、`value` 又相同），
 > 按官方「第一条命中即决定上游」，第二条永远不会被求值。详见 2.4。
 
-### 2.4 `forward` 塌缩的设计判据（两个反直觉事实）
+### 2.4 `forward` 的设计判据（两个反直觉事实）
 
 决定「不必在 forward 里列举任何节点 / 订阅域名」的两层原因：
 - 配了 `proxy_nameservers` 后，**代理 DNS 会跳过 forward** —— 节点域名根本不走这里（清单 2b）。
 - 兜底 `value` 为**单值**时，**规则顺序与域名清单都不影响结果**（官方：「规则按声明顺序求值，第一条命中决定上游」；但所有兜底都指向同一个组，顺序无意义）。
+
+**`routing_v3` 起判据补一条**：`reject` 是**终止动作**（拒答、不产生解析），
+因此它与兜底组可以并存而不破坏上述性质 —— 真正要保证的是
+**「所有非 `reject` 规则的去向都等于兜底组」**（`audit_dns_forward.py` 已按此扩展，2026-09-23）。
 
 ⇒ 于是 forward 与订阅**彻底解耦**：你换十个订阅，这里一行都不用改。
 
@@ -375,7 +387,7 @@ forward:
 ## 6. 已知代价与取舍
 
 - **`Foreign-DNS` 已删除**：迭代 f10 起它就无任何引用（forward 兜底改国内组后不再需要境外组）；`routing_v1` 曾**整组注释**保留为 A/B 备用，**`routing_v2` 起整段删除**。要恢复境外解析答案，需自行在 `upstreams` 里加回该组。风险提醒：若用它作兜底且代理未就绪，会掉进明文 `:53`。
-- **两条线 × 双形态**：可选只有 `profiles/lazy.yaml`（**懒人版**，4 组 / 9 条规则）与 `profiles/routing_v2.4.yaml`（**分流版 · 推荐**，完整分流）；其余 `routing_v2.3` / `routing_v2.2` / `routing_v2.1` / `routing_v2` / `routing_v1` 都是分流线的历代旧版、保留以备对照（`routing_v1`~`routing_v2.1` 为 29 组 / 24 条，`routing_v2.2`~`routing_v2.4` 为 27 组 / 24 条）。**各版本逐项差异见 [`docs/07-文件版本沿革.md`](../docs/07-文件版本沿革.md)（权威版本）**。⚠️ 文件名 `routing_v1`…`routing_v2.4` 是**文件版本**，与 `docs/06` 的「配置迭代谱系 f1~f10」是两个维度。
+- **两条线 × 双形态**：可选只有 `profiles/lazy.yaml`（**懒人版**，4 组 / 9 条规则）与 `profiles/routing_v3.yaml`（**分流版 · 推荐**，26 组 / 24 条）；其余 `routing_v2.4` / `routing_v2.3` / `routing_v2.2` / `routing_v2.1` / `routing_v2` / `routing_v1` 都是分流线的历代旧版、保留以备对照（`routing_v1`~`routing_v2.1` 为 29 组 / 24 条，`routing_v2.2`~`routing_v2.4` 为 27 组 / 24 条）。**各版本逐项差异见 [`docs/07-文件版本沿革.md`](../docs/07-文件版本沿革.md)（权威版本）**。⚠️ 文件名 `routing_v1`…`routing_v3` 是**
 - **图标整合进本仓库**：26 个图标源自已整合进 `icons/`，模板不再跨项目引用图标地址。来源归属与许可见 [`docs/10-图标与许可.md`](../docs/10-图标与许可.md)（公开仓库署名）。
 - **删除虚拟节点（不保留引用）**：模板 `proxies` 为空，占位节点名引用已从 `policy_groups` 剥除（组间引用保留；`routing_v2.3` 起**已无空组**）。不保留虚假结构，由你自行填写。
 - **与订阅解耦**：forward 不写任何节点 / 订阅域名，换订阅无需改动 DNS 段（清单 18 验证订阅耦合 4 → 0）。
@@ -509,7 +521,7 @@ S="skill/scripts"
 为了避免模板跨项目引用图标地址（你的项目或别人的项目）。26 个图标已整合进 `icons/`，模板全部以本仓库原始地址引用，并保留来源署名。
 
 **Q8：两个模板文件有什么区别？**
-内容完全一致，仅注释差异。`profiles/routing_v2.4.yaml` 带注释（每段附原理），`profiles/routing_v2.4.min.yaml` 纯配置。按习惯取用其一（其余版本同理：`lazy` / `routing_v1` / `routing_v2` / `routing_v2.1` / `routing_v2.2` / `routing_v2.3` / `routing_v2.4` 各有这两份）。
+内容完全一致，仅注释差异。`profiles/routing_v3.yaml` 带注释（每段附原理），`profiles/routing_v3.min.yaml` 纯配置。按习惯取用其一（其余版本同理：`lazy` / `routing_v1` / `routing_v2` / `routing_v2.1` / `routing_v2.2` / `routing_v2.3` / `routing_v2.4` / `routing_v3` 各有这两份）。
 
 **Q9：审计全绿就安全了吗？**
 不。本项目连续 5 次「脚本 0 high、实测仍有问题」，根因是审计维度缺失（没看规则集文件、没看分流覆盖）。必须把每个新维度补成可复跑脚本，而不是重跑同一脚本。详见第 3 节 / 清单 16、17。

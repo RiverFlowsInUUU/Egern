@@ -2,7 +2,8 @@
 """清单 18：dns.forward 审计 —— 「换订阅会不会让防泄露失效？」
 
 回答三个问题：
-  ① forward 的 value 是不是**单值**？若是，则规则顺序与域名清单都不影响结果
+  ① forward 里**除 `reject` 之外**的去向是不是**单值（= 兜底组）**？若是，则规则顺序与域名清单都不影响结果
+   （`reject` 是终止动作、命中即拒答，不产生解析，与兜底判定无关）
      ⇒ 新增/更换任何域名（含换订阅后的节点域名）行为不变，本节无需维护。
   ② forward 里有没有把**节点域名写死**（订阅耦合度）？换订阅后这些规则会变死代码。
   ③ 兜底组是否「直连可达 + 端点全为 IP 字面量 + 不需要 bootstrap」？这决定
@@ -159,13 +160,21 @@ def main():
     print("【二】value 单值性（决定『换域名还要不要改配置』）")
     print("-" * 100)
     print(f"  启用的规则里出现的 value 集合: {values}")
-    single = len(values) <= 1
+    # ⚠️ 判据（2026-09-23 扩展）：`reject` 是**终止动作**（官方：「refuse the query and
+    #    return an empty response」）—— 命中即拒答、根本不产生解析，因此它与兜底组**不冲突**，
+    #    可以并存。真正要保证的性质是：**所有非 reject 规则的去向都等于兜底组**，
+    #    这样新域名（含换订阅后的节点域名）落进兜底组的行为与其它域名一致。
+    non_reject = sorted({v for v in values if v != 'reject'})
+    n_reject = len([1 for (_, _, v, e) in flat if e and v == 'reject'])
+    if n_reject:
+        print(f"  其中 `reject` 规则 {n_reject} 条 —— 终止动作（拒答，不产生解析）⇒ 与兜底判定无关。")
+    single = set(non_reject) <= ({catch_value} if catch_value is not None else set())
     if single:
-        print("  ✅ 单值：无论命中哪一条、无论声明顺序，结果都是同一个上游")
+        print("  ✅ 非 reject 规则去向唯一且等于兜底组：无论命中哪一条、无论声明顺序，结果都是同一上游")
         print("     ⇒ **域名清单与规则顺序都不影响结果** ⇒ 新增任何域名（含换订阅后的节点域名）行为不变。")
     else:
         print("  ⚠️ 多值：结果取决于域名命中哪条规则 ⇒ 新域名会落到兜底组，需确认兜底组是否安全。")
-        print(f"     兜底组的 value = {catch_value}")
+        print(f"     非 reject 值集合 = {non_reject}；兜底组的 value = {catch_value}")
 
     # ---------- 订阅耦合度 ----------
     node_domains = []
@@ -293,7 +302,7 @@ def main():
         print("结论：⚠️ 有需要确认的项")
         reasons = []
         if not single:
-            reasons.append("forward 的 value 不是单值 ⇒ 新域名会落到兜底组，需人工确认")
+            reasons.append("forward 的非 reject 去向不止一个（或与兜底组不同）⇒ 新域名会落到兜底组，需人工确认")
         if catch_value is None:
             reasons.append("没有兜底规则 ⇒ 未命中的域名回退 Bootstrap（明文 UDP:53）")
         if bad_ep:

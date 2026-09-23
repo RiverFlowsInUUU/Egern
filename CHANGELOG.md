@@ -17,7 +17,35 @@
 > GitHub 对改名仓保留 **301 跳转**，**旧订阅地址与图标 URL 仍然可用**；
 > 仓库内的引用已全部改成新名，新写地址请用 `.../RiverFlowsInUUU/Egern/...`。
 
-### 2026-09-22
+### 2026-09-23
+
+### 新增
+
+- 🆕 **`routing_v3`（分流版 · 推荐）** —— 相对 `routing_v2.4` 的四项变化：
+  1. **订阅槽位 2 → 1**：`Airport-A` / `Airport-B` 合并为单个隐藏 `Airport`（`hidden: true`），组数 `27 → 26`。
+  2. **`dns.forward` 1 → 4 条**：`白名单(white-guard → Domestic-DNS)` → `Jinx-Ads / AWAvenue (value: reject)`
+     → `catch-all`。官方 `value` 字段规定特殊值 `reject` =「refuse the query and return an empty response」，
+     命中即在**解析阶段**拒答 ⇒ 等价 Surge 的 `pre-matching REJECT`。
+     ⚠️ **白名单必须排在两条广告清单之前**（AWAvenue 会命中白名单里 10 条功能域），否则白名单域名连解析都拿不到。
+     防泄露面不变：查询去向仍是 `Domestic-DNS`（加密）或拒答二选一，`proxy_nameservers` 绕过 forward、`bootstrap` 依旧闲置。
+  3. **`rules` 补 `Private`（`private.txt` → `DIRECT`）**、**删内联 `domain_suffix: cn`**
+     （`direct.txt` 第 23828 行已含 `DOMAIN-SUFFIX,cn`，属重复）；`rule_set` 条数 `21 → 22`，`rules` 总数仍 24。
+  4. **规则段与 Surge `routing_v3` 内容与顺序逐行对拍**：内网段提前到应用之前，`WeChat` 后移到 `Apple` 之后。
+- 🧪 **审计脚本判据扩展**：`audit_dns_forward.py` 原先要求 forward 的 `value` 全体单值，
+  现改为「**非 `reject` 去向单值且等于兜底组**」—— `reject` 是终止动作（拒答、不产生解析），与兜底组可并存。
+  已用 5 个 fixture 回归（`bad_*` 仍判负、`ok_*` 仍通过）。
+
+### 变更
+
+- 📝 **文档同步 v3**：`README`（订阅地址 → `routing_v3.min.yaml`、组数徽章 26、订阅槽位说明改为 1 处）、
+  `DetailsReadme`（§1.5 forward 表、§2.3 ③、§2.4 判据、§6 已知代价、Q8）、
+  `docs/04`（组数 / 规则构成 / forward 说明）、`docs/06`、`docs/07`（新增 `routing_v3` 行与差异明细）、
+  `docs/08` `docs/09` `docs/11`（规则表整段重写）、`skill/SKILL.md`、`skill/reference/*`。
+- ⚠️ **文件名与 Surge 对齐**：Surge 同日把 `routing.conf` 改名为 `routing_v3.conf`（旧地址 404）。
+
+---
+
+## 2026-09-22
 
 **变更**
 

@@ -120,7 +120,7 @@ printf 'result: %d passed, %d failed\n' "$pass" "$fail"
 # ── 阶段 2：地区组 filter 与 Other Regions 负向断言的「两份拷贝」同步 ────────────
 # 断言对象是**仓库里的真实 profile**（不是上面的合成 fixture）。
 # 期望全部 rc=0：
-#   · routing_v1 / routing_v2 / routing_v2.1 / routing_v2.2 / routing_v2.3 / routing_v2.4 → 6 个地区组的关键词必须逐字出现在负向断言里
+#   · routing_v1 / routing_v2 / routing_v2.1 / routing_v2.2 / routing_v2.3 / routing_v2.4 / routing_v3 → 6 个地区组的关键词必须逐字出现在负向断言里
 #   · lazy 没有该结构 → 脚本打印"无需校验"并 rc=0
 # rc=1 = 有地区关键词漏同步（两组不再互斥）；rc=2 = 解析失败 / 用法错误。两者都算失败。
 printf '\n'
